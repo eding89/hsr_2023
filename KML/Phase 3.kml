@@ -1,0 +1,995 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>Phase 3.kml</name>
+	<StyleMap id="inline">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline16</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline2</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline13">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="inline16">
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="inline2">
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<StyleMap id="inline4">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline13</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline6</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline6">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<StyleMap id="m_ylw-pushpin2">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#s_ylw-pushpin6</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#s_ylw-pushpin_hl6</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_police">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_police0</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_police</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_police0">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_police</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_police0</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_rail">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_rail2</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_rail</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_rail0">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_rail1</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_rail2</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_rail3">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_rail</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_rail4</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin0</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin5</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin04">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin70</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin35</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin3</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin17">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin21</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin14</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin23">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin11</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin09</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin24">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin5</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin6</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin3">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin14</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin21</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin4">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin18</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin9</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin6">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin12</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin2</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin7">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin3</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="s_ylw-pushpin6">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffaa00</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Style id="s_ylw-pushpin_hl6">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffaa00</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_police">
+		<IconStyle>
+			<scale>1.4</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/police.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sh_police0">
+		<IconStyle>
+			<scale>1.4</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/police.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sh_rail">
+		<IconStyle>
+			<scale>1.4</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sh_rail2">
+		<IconStyle>
+			<scale>1.4</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sh_rail4">
+		<IconStyle>
+			<scale>1.4</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin09">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aaff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin14">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00ffff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin2">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f0000</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin21">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0055ff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin3">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin35">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fffaa</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin5">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin6">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+		</LineStyle>
+		<PolyStyle>
+			<color>ff000000</color>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin9">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+		</LineStyle>
+		<PolyStyle>
+			<color>ff000000</color>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_police">
+		<IconStyle>
+			<scale>1.2</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/police.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sn_police0">
+		<IconStyle>
+			<scale>1.2</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/police.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sn_rail">
+		<IconStyle>
+			<scale>1.2</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sn_rail1">
+		<IconStyle>
+			<scale>1.2</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sn_rail2">
+		<IconStyle>
+			<scale>1.2</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin0">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin1">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin11">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aaff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin12">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f0000</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin14">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0055ff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin18">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+		</LineStyle>
+		<PolyStyle>
+			<color>ff000000</color>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin21">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00ffff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin3">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin5">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff000000</color>
+		</LineStyle>
+		<PolyStyle>
+			<color>ff000000</color>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin70">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fffaa</color>
+			<width>2</width>
+		</LineStyle>
+	</Style>
+	<Folder>
+		<name>Phase 3</name>
+		<Folder>
+			<name>Phase 3W</name>
+			<Folder>
+				<name>Tracks</name>
+				<Placemark>
+					<name>Untitled Path</name>
+					<styleUrl>#msn_ylw-pushpin</styleUrl>
+					<LineString>
+						<tessellate>1</tessellate>
+						<coordinates>
+							-83.04843392395416,42.30521211865799,0 -83.04292580479671,42.29643603232883,0 -83.04101862542653,42.2945835210555,0 -83.03367528873542,42.29033541759946,0 -83.03235827692009,42.28984095174231,0 -83.0307966944341,42.28969035828551,0 -83.01816973852372,42.29052797238406,0 -83.01665058250997,42.29081848772871,0 -83.01540783995071,42.29125438375269,0 -83.01432226228447,42.29209613346018,0 -83.00666559864888,42.30326000268632,0 -82.99650470512913,42.31762792833302,0 -82.9938599419074,42.32122497929996,0 -82.99260106624928,42.32219413194886,0 -82.9910459998721,42.32277156122522,0 -82.98932091726549,42.32296959469868,0 -82.98830190040927,42.32291817400967,0 
+						</coordinates>
+					</LineString>
+				</Placemark>
+			</Folder>
+			<Folder>
+				<name>Stations</name>
+				<Placemark>
+					<name>Windsor (Bridgeview)</name>
+					<LookAt>
+						<longitude>-83.04228313888856</longitude>
+						<latitude>42.30546464723461</latitude>
+						<altitude>0</altitude>
+						<heading>-5.418006132438156</heading>
+						<tilt>8.689000643629138</tilt>
+						<range>2649.78880725785</range>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</LookAt>
+					<styleUrl>#msn_rail0</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-83.04791387936314,42.30281308245541,0</coordinates>
+					</Point>
+				</Placemark>
+				<Placemark>
+					<name>Detroit (Michigan Central)</name>
+					<Camera>
+						<longitude>-83.08202654668605</longitude>
+						<latitude>42.32700881966677</latitude>
+						<altitude>1644.327401398154</altitude>
+						<heading>-2.36184502176807</heading>
+						<tilt>9.329357844476631</tilt>
+						<roll>0.7284257082537269</roll>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</Camera>
+					<styleUrl>#msn_rail3</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-83.08197479786139,42.3285743049909,0</coordinates>
+					</Point>
+				</Placemark>
+			</Folder>
+			<Folder>
+				<name>Border Checkpoints</name>
+				<Placemark>
+					<LookAt>
+						<longitude>-83.046152579891</longitude>
+						<latitude>42.30446598838837</latitude>
+						<altitude>0</altitude>
+						<heading>-4.884179684670305</heading>
+						<tilt>13.75426164703252</tilt>
+						<range>2876.098162710509</range>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</LookAt>
+					<styleUrl>#msn_police</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-83.04870720214832,42.30429065321607,0</coordinates>
+					</Point>
+				</Placemark>
+				<Placemark>
+					<LookAt>
+						<longitude>-83.08018625419066</longitude>
+						<latitude>42.32815880288599</latitude>
+						<altitude>0</altitude>
+						<heading>-4.461367824129963</heading>
+						<tilt>0</tilt>
+						<range>1061.251982773289</range>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</LookAt>
+					<styleUrl>#msn_police0</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-83.07950182348652,42.3285197660279,0</coordinates>
+					</Point>
+				</Placemark>
+			</Folder>
+			<Folder>
+				<name>Cross Border Shuttle</name>
+				<Placemark>
+					<name>Untitled Path</name>
+					<styleUrl>#msn_ylw-pushpin04</styleUrl>
+					<LineString>
+						<tessellate>1</tessellate>
+						<coordinates>
+							-83.07947925213141,42.32919375728719,0 -83.07947061109395,42.32835346355032,0 -83.07939221937906,42.3280014547594,0 -83.07918146561441,42.32769426894063,0 -83.07874694340585,42.32752085358069,0 -83.07674840020606,42.32708884247143,0 -83.0749433065677,42.32649429672999,0 -83.06942765529045,42.32444687499972,0 -83.06361857951489,42.32241627204098,0 -83.05882197568909,42.31933552752835,0 -83.05545194164188,42.31604262069995,0 -83.05348027018319,42.31375302466912,0 -83.05008125403198,42.30795564925159,0 -83.0480816081491,42.3046393346237,0 
+						</coordinates>
+					</LineString>
+				</Placemark>
+			</Folder>
+		</Folder>
+		<Folder>
+			<name>Phase 3N</name>
+			<Folder>
+				<name>Stations</name>
+				<Placemark>
+					<name>Toronto (Kipling)</name>
+					<LookAt>
+						<longitude>-79.52544248603253</longitude>
+						<latitude>43.63792930637862</latitude>
+						<altitude>0</altitude>
+						<heading>-3.037169410453924</heading>
+						<tilt>2.036988435888973</tilt>
+						<range>13756.89582436902</range>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</LookAt>
+					<styleUrl>#msn_rail</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-79.53585114246955,43.62826387834457,0</coordinates>
+					</Point>
+				</Placemark>
+				<Placemark>
+					<name>Niagara Falls (USA)</name>
+					<Camera>
+						<longitude>-79.05011287582275</longitude>
+						<latitude>43.10876356842237</latitude>
+						<altitude>1013.239974848346</altitude>
+						<heading>0.2968761316118024</heading>
+						<tilt>10.57881845488935</tilt>
+						<roll>0.6310612102047912</roll>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</Camera>
+					<styleUrl>#msn_rail3</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-79.05410206113791,43.1097426976107,0</coordinates>
+					</Point>
+				</Placemark>
+			</Folder>
+			<Folder>
+				<name>Border Crossings</name>
+				<Folder>
+					<name>Bridge</name>
+					<Placemark>
+						<name>Untitled Path</name>
+						<styleUrl>#m_ylw-pushpin2</styleUrl>
+						<LineString>
+							<tessellate>1</tessellate>
+							<coordinates>
+								-79.06093292802366,43.10781459558103,0 -79.06002420716244,43.10812675282893,0 -79.05926193297626,43.10834794358728,0 -79.05852510403933,43.10859623482801,0 -79.05780252031226,43.10880063315963,0 -79.05714880044079,43.10893019037051,0 -79.05633098918551,43.10908001357564,0 -79.05555779536947,43.1092177331116,0 
+							</coordinates>
+						</LineString>
+					</Placemark>
+				</Folder>
+				<Folder>
+					<name>Checkpoints</name>
+					<Placemark>
+						<LookAt>
+							<longitude>-79.54919344810855</longitude>
+							<latitude>43.62200860715812</latitude>
+							<altitude>0</altitude>
+							<heading>-2.489295066828487</heading>
+							<tilt>4.12093049834981</tilt>
+							<range>10042.57278568182</range>
+							<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+						</LookAt>
+						<styleUrl>#msn_police</styleUrl>
+						<Point>
+							<gx:drawOrder>1</gx:drawOrder>
+							<coordinates>-79.53685001335522,43.63064580085783,0</coordinates>
+						</Point>
+					</Placemark>
+					<Placemark>
+						<LookAt>
+							<longitude>-79.06059058769064</longitude>
+							<latitude>43.10853771479295</latitude>
+							<altitude>0</altitude>
+							<heading>-2.186268702339891</heading>
+							<tilt>11.73484689304561</tilt>
+							<range>1548.285747177752</range>
+							<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+						</LookAt>
+						<styleUrl>#msn_police</styleUrl>
+						<Point>
+							<gx:drawOrder>1</gx:drawOrder>
+							<coordinates>-79.06108747699585,43.10827882696588,0</coordinates>
+						</Point>
+					</Placemark>
+					<Placemark>
+						<Camera>
+							<longitude>-79.05513635119691</longitude>
+							<latitude>43.10885469022639</latitude>
+							<altitude>467.6984377314517</altitude>
+							<heading>89.7858094739355</heading>
+							<tilt>0.1158607313854625</tilt>
+							<roll>90.11285259558724</roll>
+							<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+						</Camera>
+						<styleUrl>#msn_police</styleUrl>
+						<Point>
+							<gx:drawOrder>1</gx:drawOrder>
+							<coordinates>-79.05510919117982,43.10913836773269,0</coordinates>
+						</Point>
+					</Placemark>
+				</Folder>
+				<Folder>
+					<name>Polygons</name>
+					<Placemark>
+						<name>Untitled Polygon</name>
+						<styleUrl>#msn_ylw-pushpin4</styleUrl>
+						<Polygon>
+							<tessellate>1</tessellate>
+							<outerBoundaryIs>
+								<LinearRing>
+									<coordinates>
+										-79.06149680573141,43.10855760861828,0 -79.06121817938357,43.1077667755354,0 -79.06078352458776,43.1077579547884,0 -79.06076530949201,43.10856119505021,0 -79.06149680573141,43.10855760861828,0 
+									</coordinates>
+								</LinearRing>
+							</outerBoundaryIs>
+						</Polygon>
+					</Placemark>
+					<Placemark>
+						<name>Untitled Polygon</name>
+						<styleUrl>#msn_ylw-pushpin24</styleUrl>
+						<Polygon>
+							<tessellate>1</tessellate>
+							<outerBoundaryIs>
+								<LinearRing>
+									<coordinates>
+										-79.05551217864127,43.1087418706238,0 -79.05426194693759,43.10871395603937,0 -79.0545248831569,43.10945654655195,0 -79.05559876800064,43.10937608275923,0 -79.05551217864127,43.1087418706238,0 
+									</coordinates>
+								</LinearRing>
+							</outerBoundaryIs>
+						</Polygon>
+					</Placemark>
+				</Folder>
+			</Folder>
+			<Folder>
+				<name>Tracks</name>
+				<Folder>
+					<name>250</name>
+					<Placemark>
+						<name>Untitled Path</name>
+						<styleUrl>#msn_ylw-pushpin3</styleUrl>
+						<LineString>
+							<tessellate>1</tessellate>
+							<coordinates>
+								-79.18843060555461,43.13712403088486,0 -79.26359602387217,43.14866226568449,0 -79.39801334444891,43.16956212410332,0 -79.51760831081579,43.18797729225477,0 -79.61655931452101,43.20780867683454,0 -79.75107643258951,43.23976567579365,0 -79.83849623939399,43.26041860915905,0 
+							</coordinates>
+						</LineString>
+					</Placemark>
+				</Folder>
+				<Folder>
+					<name>200</name>
+					<Placemark>
+						<name>Untitled Path</name>
+						<styleUrl>#msn_ylw-pushpin23</styleUrl>
+						<LineString>
+							<tessellate>1</tessellate>
+							<coordinates>
+								-79.18841563674047,43.13713313232194,0 -79.18578183482562,43.13677229694559,0 -79.18362685033118,43.13678378068671,0 -79.18174011388014,43.13688303367607,0 -79.1795546223693,43.13721179713139,0 -79.14963478481211,43.14481073879007,0 -79.14719456040024,43.14516653243087,0 -79.1448769580154,43.14531029776209,0 -79.14228319969193,43.14527211368581,0 -79.10562924002376,43.14247945229037,0 -79.10217913683742,43.14188672592878,0 -79.09973360850917,43.14119987166508,0 -79.09660181706535,43.13977591575389,0 -79.09064623648587,43.13651548772369,0 -79.08840283873135,43.13461645887691,0 -79.0864701808224,43.13255725343826,0 -79.07599899055508,43.11322807388552,0 -79.07495109966627,43.11186175872309,0 -79.07398824912771,43.11106288005631,0 -79.07268538180386,43.11034685752644,0 
+							</coordinates>
+						</LineString>
+					</Placemark>
+				</Folder>
+				<Folder>
+					<name>160</name>
+					<Placemark>
+						<name>Untitled Path</name>
+						<styleUrl>#msn_ylw-pushpin17</styleUrl>
+						<LineString>
+							<tessellate>1</tessellate>
+							<coordinates>
+								-79.55369180886699,43.58649975126613,0 -79.5979683776,43.54603279034276,0 -79.61615790813569,43.52947906882184,0 -79.64163922411581,43.50561282504211,0 -79.67904757171709,43.45809485763771,0 -79.73965727651044,43.39964055163309,0 -79.78638684166711,43.35536873432731,0 -79.86020285898407,43.30933195520531,0 -79.88364954325422,43.29542828808251,0 -79.88689343565224,43.29208780116502,0 -79.88911272395008,43.28859416529457,0 -79.89120417151729,43.28482014485053,0 -79.89048198027898,43.27968985793594,0 -79.88709182439754,43.27483118681974,0 -79.8826338618927,43.27066744773378,0 -79.83837668831228,43.26023301541414,0 
+							</coordinates>
+						</LineString>
+					</Placemark>
+				</Folder>
+				<Folder>
+					<name>Single</name>
+					<Placemark>
+						<name>Untitled Path</name>
+						<styleUrl>#msn_ylw-pushpin1</styleUrl>
+						<LineString>
+							<tessellate>1</tessellate>
+							<coordinates>
+								-79.05555336198751,43.10964493140565,0 -79.06070374293846,43.10893049120191,0 
+							</coordinates>
+						</LineString>
+					</Placemark>
+				</Folder>
+				<Folder>
+					<name>Double</name>
+					<Placemark>
+						<name>Untitled Path</name>
+						<styleUrl>#msn_ylw-pushpin7</styleUrl>
+						<LineString>
+							<tessellate>1</tessellate>
+							<coordinates>
+								-79.53754330261448,43.63248081995722,0 -79.53502910938319,43.62631622774899,0 -79.53340297452809,43.62440465299669,0 -79.52535333906926,43.60579480052849,0 -79.52504567942718,43.60442429137233,0 -79.52513192122477,43.60336204089624,0 -79.52573406532895,43.60223816266274,0 -79.52681054097233,43.60122484847711,0 -79.54624510310745,43.59150649341636,0 -79.54921038852997,43.58988608088227,0 -79.55155795934343,43.58828733900087,0 -79.5536939048187,43.58646538289518,0 
+							</coordinates>
+						</LineString>
+					</Placemark>
+					<Placemark>
+						<name>Untitled Path</name>
+						<styleUrl>#msn_ylw-pushpin7</styleUrl>
+						<LineString>
+							<tessellate>1</tessellate>
+							<coordinates>
+								-79.06070968102355,43.10892773481606,0 -79.06106780215609,43.10891545195104,0 -79.06694370278908,43.10895797491604,0 -79.06771656012997,43.10900691197103,0 -79.06872417994978,43.10912089905689,0 -79.06969570931558,43.109283015466,0 -79.07065770214795,43.10955006671075,0 -79.07183232082927,43.10997541847097,0 -79.0727782625767,43.1104067029789,0 
+							</coordinates>
+						</LineString>
+					</Placemark>
+				</Folder>
+			</Folder>
+			<Folder>
+				<name>CN Replacement Tracks</name>
+				<Placemark>
+					<name>Untitled Path</name>
+					<styleUrl>#msn_ylw-pushpin6</styleUrl>
+					<LineString>
+						<tessellate>1</tessellate>
+						<coordinates>
+							-79.93602247389697,43.08157973884967,0 -79.9345296549281,43.08209241415859,0 -79.93285993219553,43.08224884689731,0 -79.93095471917184,43.08197016645875,0 -79.92519916013653,43.0803423701846,0 -79.91841427445667,43.07791243895512,0 -79.91664071598694,43.07670185532319,0 -79.91148239923511,43.06748577464528,0 -79.9098602639841,43.0654909065579,0 -79.90775619253932,43.06408362146221,0 -79.8791417777306,43.04525567563491,0 -79.83550755345631,43.02217287068243,0 -79.7853370006396,42.99551337932892,0 -79.73747991790214,42.96964352202664,0 -79.73643084177149,42.96921559775185,0 -79.73555201711437,42.96902739337135,0 -79.73443176932732,42.96893344768631,0 -79.70911283442641,42.96865060331859,0 -79.61683343842314,42.96764166265079,0 -79.56554527857443,42.96699487327627,0 
+						</coordinates>
+					</LineString>
+				</Placemark>
+			</Folder>
+		</Folder>
+		<Folder>
+			<name>Phase 3M</name>
+			<Folder>
+				<name>Checkpoint</name>
+				<Placemark>
+					<LookAt>
+						<longitude>-73.45481572777943</longitude>
+						<latitude>45.43474625961783</latitude>
+						<altitude>0</altitude>
+						<heading>1.763700565131906</heading>
+						<tilt>3.578485915619103</tilt>
+						<range>8743.427855940548</range>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</LookAt>
+					<styleUrl>#msn_police</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-73.43226691171587,45.43953240685546,0</coordinates>
+					</Point>
+				</Placemark>
+			</Folder>
+			<Folder>
+				<name>Station</name>
+				<Placemark>
+					<name>Montréal (Brossard)</name>
+					<LookAt>
+						<longitude>-73.46008690828815</longitude>
+						<latitude>45.44310513075574</latitude>
+						<altitude>0</altitude>
+						<heading>1.172725904863416</heading>
+						<tilt>5.396287398697956</tilt>
+						<range>8280.022484998042</range>
+						<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+					</LookAt>
+					<styleUrl>#msn_rail0</styleUrl>
+					<Point>
+						<gx:drawOrder>1</gx:drawOrder>
+						<coordinates>-73.43325861801171,45.43860210406553,0</coordinates>
+					</Point>
+				</Placemark>
+			</Folder>
+			<Folder>
+				<name>300</name>
+				<Placemark>
+					<name>Untitled Path</name>
+					<styleUrl>#inline4</styleUrl>
+					<LineString>
+						<tessellate>1</tessellate>
+						<coordinates>
+							-72.98215624699687,45.01461785217921,0 -72.98321652734479,45.049498000791,0 -72.98478505437585,45.0563820905405,0 -72.98724996991812,45.06282544447739,0 -72.99359173429428,45.07191028575394,0 -73.00130862315662,45.0790349099341,0 -73.00723209550314,45.08295982394075,0 -73.3221165894242,45.2740315808383,0 -73.3293161607987,45.28046865255245,0 -73.3341699444768,45.2856059104404,0 -73.40513303508649,45.37222180571112,0 -73.42483893004045,45.3961330079605,0 
+						</coordinates>
+					</LineString>
+				</Placemark>
+			</Folder>
+			<Folder>
+				<name>Regular</name>
+				<Placemark>
+					<name>Untitled Path</name>
+					<styleUrl>#inline</styleUrl>
+					<LineString>
+						<tessellate>1</tessellate>
+						<coordinates>
+							-73.42475906297643,45.39626997716811,0 -73.43660381652406,45.41015719525129,0 -73.4442314394901,45.41911408885471,0 -73.44485762329127,45.42027271573558,0 -73.44505102058631,45.42152310468404,0 -73.44490944060175,45.4227541089251,0 -73.44430330380476,45.42386316959647,0 -73.4365196955435,45.43674043312912,0 -73.43558339746258,45.43739626776356,0 -73.42905229048445,45.43951358374719,0 
+						</coordinates>
+					</LineString>
+				</Placemark>
+			</Folder>
+		</Folder>
+	</Folder>
+</Document>
+</kml>

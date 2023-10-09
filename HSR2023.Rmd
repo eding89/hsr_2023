@@ -1,0 +1,3754 @@
+---
+title: "High Speed Rail in the Windsor - Quebec Corridor: All Aboard! How?"
+output: github_document
+runtime: shiny
+date: "2023-10-09"
+---
+
+```{r include = FALSE}
+library(vembedr)
+library(tidyverse)
+library(readxl)
+library(leaflet)
+library(sf)
+library(shiny)
+library(dplyr)
+library(purrr)
+library(leaflegend)
+suppressMessages(library(rgdal))
+```
+
+# You Know Why You're Here
+
+If you're reading this, you already know that Canada is well overdue for a high speed railway, especially along the Windsor to Quebec City corridor. I won't go into detail about the points in favour. I'll let Rick Mercer speak for you.
+
+```{r echo = FALSE}
+
+embed_url("https://www.youtube.com/watch?v=10cXpd8haQQ")
+
+embed_url("https://www.youtube.com/watch?v=zqaIJc39ExI")
+```
+
+So, it's a good idea. But what would a high speed railway look like?
+
+I seek to begin to answer these questions in a simple yet informative document. Among them:
+
+-   What are the potential ridership patterns along the corridor?
+-   How much would it cost, and what's the economic case?
+-   How would it work, operationally?
+-   What's the elephant in the room?
+
+While I don't have a P.Eng., I do have a passion in helping people like yourself relate to complex issues. Throughout this document, I will do a wide variety of calculations of existing models, examinations of best practices from around the world, and - yes - educated guesses. So let's begin.
+
+```{r echo = FALSE}
+can_cities_coordinates <- read_excel('Windsor-Quebec.xlsx', sheet = 'Population', range = "A1:E10")
+```
+
+## What Are We Studying?
+
+First, let's take a more detailed look at the demographics along the corridor.
+
+[Statistics Canada](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710014601&pickMembers%5B0%5D=1.1&pickMembers%5B1%5D=3.1&pickMembers%5B2%5D=2.1&pickMembers%5B3%5D=4.1&pickMembers%5B4%5D=5.1&cubeTimeFrame.startYear=2021&cubeTimeFrame.endYear=2041&referencePeriods=20210101%2C20410101) has projections for the populations of Census Metropolitan Areas (CMAs) along the corridor, up to 2041.
+
+Let's plot a map of those CMAs with a projected population of at least 500,000. That represents the main sources of ridership. Smaller urban centres such as Kingston and Trois-Rivières will also contribute to ridership, but they will be relatively marginal compared to the biggest cities.
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Major CMAs along Windsor - Quebec Corridor, by 2041 Projected Population"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+
+         # Add circles and lines with toggling labels
+     m <- m %>%
+       
+       addCircleMarkers(
+         data = can_cities_coordinates,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+       
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA, "  (", can_cities_coordinates$`2041 Projection`, ")"),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       addLayersControl(
+         overlayGroups = c("Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+   })
+ }
+
+ shinyApp(ui, server)
+
+```
+
+Note that this is merely the median projection - actual populations could be anyone's guess. Also note that the Hamilton and St. Catharines CMAs are combined for simplicity.
+
+## Thanks to Alon Levy
+
+I would like to give my sincere thanks to Alon Levy, Fellow in the Transportation and Land Use program of the NYU Marron Institute, for making this exploration possible. He has been analyzing a wide range of subjects related to public transit and land use all around the world.
+
+One of his prime accomplishments was to create a model to estimate ridership on high speed railways between any two given cities. He did this by examining ridership patterns from three world leaders in the field: Japan, France, and Spain. From that, we are able to provide estimates for ridership along a hypothetical high speed railway along our corridor.
+
+<https://pedestrianobservations.com/2020/02/13/metcalfes-law-for-high-speed-rail/>
+
+## Thanks to Robert Metcalfe
+
+Alon's formula is derived from Metcalfe's Law:
+
+<https://en.wikipedia.org/wiki/Metcalfe%27s_law>
+
+While it was originally defined to estimate the value of a telecommunication system, the concept has been expanded further to other fields. In our context, Alon has helpfully pointed out that ridership between two cities is proportional to the multiple of the two cities' populations, divided by the square of the distance between them. This means that, the larger the population of two cities, the more the ridership between them; the further the distance between them, the less the ridership.
+
+In principle, ridership between any two cities A and B could be estimated by the following formula:
+
+$$
+R_{A,B}= k*\frac{P_A*P_B}{d_{A, B}^{2}}
+$$
+
+R_A,B representing ridership, P_A and P_B representing the population of the two cities, and d_A,B representing the distance between the two cities. k represents a constant to arrive at R.
+
+After examining ridership patterns in the other countries, Alon modified the formula to estimate ridership between any two cities along a high speed railway.
+
+$$
+R_{A,B}= 75000*\frac{(P_A*P_B)^{0.8}}{{max(500,d_{A, B})}^{2}}
+$$
+
+In this case, R_A,B represents the ridership per year in millions. P_A and P_B represent the population of the two metropolitan areas. d_A,B represents the distance between the two in kilometres.
+
+This formula will calculate all our ridership methods between cities along the corridor - and beyond.
+
+Here's a real-world example: According to the 2021 Census, the populations of the Toronto and Montreal CMAs were 6.6 and 4.4 millions, respectively. The distance between the two is 600 km, on a route that stops in Ottawa and follows the lakeshore. Hence, we can estimate the ridership of a high speed railway that linked these two cities, without stopping along the way, and without connecting passengers on either end.
+
+$$
+R_{Tor,Mtl}= 75000*\frac{(P_{Tor}*P_{Mtl})^{0.8}}{{max(500,d_{Tor, Mtl})}^{2}} = 75000*\frac{(6.6*4.4)^{0.8}}{{max(500,600)}^{2}}=75000*\frac{14.8}{{600}^{2}}=3.08
+$$
+
+Hence, our model estimates that a high speed railway that hypothetically existed in 2021 linking only these two cities would have served 3.08 million riders. But, as we shall see, an actual railway with stops along the way and connecting passengers will see increased ridership. That will affect our calculations - and hence assessments about the railway. The increased ridership also has a positive effect of requiring more frequent service, thus attracting more passengers in a positive feedback loop. The opposite is also true - a route with few estimated passengers would lead to less frequent service, thus deterring potential passengers. This will require creativity to still maximize benefit to as many Canadians as possible.
+
+Caveat: Alon has explained that this model begins to lose precision as journeys become longer. For instance, in his dataset, he finds there are only two city pairs with a travel time above 5.5 hours, creating more uncertainty for the longest city pairs. However, the combined ridership of such long trips is marginal, so including them into our calculations will not significantly skew our projections.
+
+Our project will be divided into three phases, and several more sub-phases. Let's go through them, first by estimating ridership levels, the intensity of traffic along the railway, and then the operating profits and construction costs. Through this, we would improve our understanding of how such a project could be implemented.
+
+# Phases
+
+Out of the three phases in which the Windsor - Quebec City High Speed Railway project will be divided, the first and most obvious one is the Toronto - Ottawa - Montreal leg.
+
+Next will be Phase 2Q, an extension from Montreal to Quebec City. Phase 2S would extend the line from Toronto to Kitchener, London, and Windsor.
+
+Although Phase 2 would be a completion within Canada, a vast pool of ridership would be tapped if the US were to complete a high speed railway network. It would enable cross-border journeys such as Toronto - New York, Toronto - Chicago, Montreal - Boston, and dozens of others. Hence, Phase 3 would entail three short extensions into the US: a Windsor - Detroit tunnel (Phase 3W), a Toronto - Niagara Falls express line (Phase 3N), and a Montreal - Vermont express line (Phase 3M). For Phase 3, our formula would be further modified to account for the reluctance to travel that the border creates; in Quebec's case, our formula is further modified by the language barrier, which further discourages cross-border travel. We can only estimate these factors due to a lack of reliable data.
+
+## Phase 1
+
+By 2041, Statistics Canada estimates that the population of the Toronto, Ottawa, and Montreal CMAs will be 10.0, 1.9, and 5.5 million, respectively. By themselves, these would be very significant sources of ridership. In the Golden Horseshoe, the CMAs of Oshawa, Kitchener, Hamilton, and St. Catharines will also be significant sources, with a combined population of 2.7 million. It's assumed that those travelling from these areas to Ottawa and Montreal would take a fast and frequent Go Transit service to Toronto's Union Station; in the case of Oshawa, the high speed trains would simply stop at the existing station.
+
+Let's sketch out what the physical infrastructure of Phase 1 might look like. It's just an idea, based on what might work.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+
+large_Station <- makeIcon(
+  iconUrl = "http://maps.google.com/mapfiles/kml/shapes/rail.png",
+  iconWidth = 16, iconHeight = 16,
+  iconAnchorX = 0, iconAnchorY = 8
+)
+
+small_Station <- makeIcon(
+  iconUrl = "http://maps.google.com/mapfiles/kml/shapes/rail.png",
+  iconWidth = 8, iconHeight = 8,
+  iconAnchorX = 0, iconAnchorY = 4
+)
+
+phase1_reg <- readOGR(dsn = "KML/Phase 1.kml", layer = "Regular", verbose=FALSE)
+phase1_160 <- readOGR(dsn = "KML/Phase 1.kml", layer = "160", verbose=FALSE)
+phase1_200 <- readOGR(dsn = "KML/Phase 1.kml", layer = "200", verbose=FALSE)
+phase1_300 <- readOGR(dsn = "KML/Phase 1.kml", layer = "300", verbose=FALSE)
+phase1_replace <- readOGR(dsn = "KML/Phase 1.kml", layer = "CN Replacement tracks", verbose=FALSE)
+phase1_allStops <- readOGR(dsn = "KML/Phase 1.kml", layer = "All Stops", verbose=FALSE)
+phase1_someStops <- readOGR(dsn = "KML/Phase 1.kml", layer = "Some Stop", verbose=FALSE)
+
+
+```
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 1 Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()   
+    
+    m <- m %>%
+      
+        addPolylines(data = phase1_replace, color = "navy", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_160, color = "yellow", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase1_allStops, icon = large_Station) %>%
+        addMarkers(data = phase1_someStops, icon = small_Station) %>%
+        addLabelOnlyMarkers(data = phase1_allStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLabelOnlyMarkers(data = phase1_someStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "8px"))
+            )  %>%
+        addLegend("bottomright", 
+                  colors = c("black",  "yellow", "#ffaa00", "red", "navy"),
+                  labels = c("Regular Track", "Max Speed 160 km/h", "Max Speed 200 km/h", "Max Speed 300 km/h", "Replacement Track for CN Rail"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+        addLegendImage(images = c('http://maps.google.com/mapfiles/kml/shapes/rail.png',
+                            'http://maps.google.com/mapfiles/kml/shapes/rail.png'),
+                 labels = c('All Trains Stop', 'Some Trains Stop'),width = c(16,8), height = c(16,8),
+                 orientation = 'vertical',
+                 title = "Stations",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+ shinyApp(ui, server)    
+    
+```
+
+Existing plans for Via Rail's High Frequency Railway call for a route between Toronto and Ottawa that tracks inland, away from the lake. However, the video as shown at the beginning argues that this proposal lacks ambition and is less effective at maximizing ridership. While our model is agnostic on the exact course of our high speed railway, my personal preference calls for a route that hugs the lake between Toronto and Brockville, before coursing inland shadowing Highway 416 and using the now-abandoned Bytown & Prescott Railway (with detours to avoid residential communities). While the section along the lake could be built as a greenfield route, we should explore value-engineering by upgrading the existing CN Kingston Sub, which traverses a straight and flat terrain. Curves could be straightened to allow for higher speeds. A full grade separation would be required, and an expansion to four tracks would be necessary for trains of different speeds to coexist. Finally, it is likely that CN Rail will find this intolerable for its freight operations: for that purpose, perhaps the CP Havelock Sub could be purchased, rebuilt, and swapped with CN in exchange for full ownership of the Kingston Sub. That would allow full freedom and flexibility for passenger rail service between Toronto and Ottawa, and through the more populous towns and cities along the lake.
+
+Between Ottawa and Montreal, a combination of using the right of way of the abandoned Montreal & Ottawa Railway and a greenfield route would provide a straight and fast route, at a modest construction cost. The existing VIA Alexandria Subdivision would be relegated to local service. However, between Vaudreuil and Montreal's Gare Centrale, a new elevated viaduct will be needed to minimize interference with freight trains. This could be a joint project with Montreal's ARTM, if it decides to upgrade its Vaudreuil Hudson line for frequent service.
+
+In the GTA, existing projects to expand the Lakeshore East Go Transit line are underway. However, this high speed rail project could require a further expansion to four tracks in Scarborough, as well as a full grade separation.
+
+With these in mind, let's examine Phase 1.
+
+### Ridership
+
+```{r echo = FALSE}
+Phase1_Ridership <-read_excel('Windsor-Quebec.xlsx', sheet = 'Ridership Phase 1', range = "A12:D17")
+
+flow_matrix_phase1 <- as.data.frame(Phase1_Ridership)
+
+rownames(flow_matrix_phase1) <- flow_matrix_phase1$CMA
+flow_matrix_phase1 <- flow_matrix_phase1[, -1]
+
+flow_matrix_phase1
+```
+
+Here we see a matrix displaying ridership between the CMAs after Phase 1 is complete. Toronto - Montreal and Toronto - Ottawa see 5.14 and 3.16 million riders. Montreal - Ottawa sees 1.96 million. However, the other CMAs also contribute significant numbers of riders to the line. Our model even believes that 1.29 million riders would travel between Montreal and the Hamilton and Niagara regions combined - further bolstering ridership on Phase 1. 1.46 million people would take our high speed train between Toronto Union and Oshawa per year, or 2,000 per direction per day - an indication that it begins to attract commuters within the GTA. Throughout this project, we will see that such smaller cities contribute a significant number of riders as the network expands.
+
+```{r echo = FALSE}
+
+convert_flow_matrix_to_dataframe <- function(flow_matrix) {
+  num_non_na <- sum(!is.na(flow_matrix))
+  flow_data <- data.frame(
+    Source = character(num_non_na),
+    Destination = character(num_non_na),
+    Flow = numeric(num_non_na)
+  )
+  row_index <- 1
+  for (i in 1:nrow(flow_matrix)) {
+    for (j in 1:ncol(flow_matrix)) {
+      if (!is.na(flow_matrix[i, j])) {
+        flow_data$Source[row_index] <- rownames(flow_matrix)[i]
+        flow_data$Destination[row_index] <- colnames(flow_matrix)[j]
+        flow_data$Flow[row_index] <- flow_matrix[i, j]
+        row_index <- row_index + 1
+      }
+    }
+  }
+  return(flow_data)
+}
+```
+
+```{r echo = FALSE}
+source_destination_coord <- function(df, cities_coord){
+  
+  df <- df %>%
+    left_join(cities_coord %>% select(CMA, Latitude, Longitude), by = c("Source" = "CMA"))
+
+  df <- df %>%
+    left_join(cities_coord %>% select(CMA, Latitude, Longitude), by = c("Destination" = "CMA"))
+  
+  return(df)
+}
+```
+
+```{r echo = FALSE}
+flow_data_phase1 <- convert_flow_matrix_to_dataframe(flow_matrix_phase1)
+
+flow_data_phase1 <- source_destination_coord(flow_data_phase1, can_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 1"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase1$Source,
+      flow_data_phase1$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase1$Flow[flow_data_phase1$Source == from_cma & flow_data_phase1$Destination == to_cma]
+        
+        from_coords <- can_cities_coordinates[can_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_cities_coordinates[can_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase1$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase1$Longitude.x + flow_data_phase1$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase1$Latitude.x + flow_data_phase1$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase1$Source, " - " , flow_data_phase1$Destination, ":", round(flow_data_phase1$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+ shinyApp(ui, server)
+
+```
+
+Here is a map displaying ridership patterns, after the completion of Phase 1; the lines' thickness are in proportion to the estimated ridership numbers.
+
+### Density
+
+With detailed ridership estimates along Phase 1, we could now calculate the density of ridership along each sections of the line by adding up the ridership for all the journey pairs that include that section. For instance, the density on the Ottawa - Montreal leg is calculated by adding the estimated ridership for Montreal - Ottawa, Montreal - Toronto, and all other points west of Ottawa.
+
+```{r echo = FALSE}
+segments <-read_excel('Windsor-Quebec.xlsx', sheet = 'Segments', range = "A1:K29")
+```
+
+```{r echo = FALSE}
+segments_phase1 <- segments %>% filter(!is.na(Phase1))
+segments_phase1 <- segments_phase1 %>% select(c(Point1,	Point2,	Phase1))
+names(segments_phase1) <- c("Source", "Destination", "Flow")
+
+segments_phase1 <- source_destination_coord(segments_phase1, can_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 1"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase1$Source,
+      segments_phase1$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase1$Flow[segments_phase1$Source == from_cma & segments_phase1$Destination == to_cma]
+        
+        from_coords <- can_cities_coordinates[can_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_cities_coordinates[can_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = 1,
+      weight = segments_phase1$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase1$Longitude.x + segments_phase1$Longitude.y) / 2
+    midpoint_lat <- (segments_phase1$Latitude.x + segments_phase1$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase1$Source, " - " , segments_phase1$Destination, ":", round(segments_phase1$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+
+```
+
+We see that, with Phase 1, all sections of the line will see annual ridership of well over 8 million - far more than any single city pair. What does this mean as far as riders are concerned?
+
+### Service Pattern
+
+Alon has estimated that a high speed rail service consisting of an eight-car train departing every hour, every day, would carry about three million passengers per year. This is assuming a load factor that averages 60%; during peak periods, this would rise and approach a full house. With that in mind, we can calculate a a rule-of-thumb: every railway car that departs every hour per direction would, over a year, carry 0.375 million passengers.
+
+From the map above, we see that the maximum annual ridership density along Phase 1 is just shy of 12 million.
+
+$$12/0.375 = 32$$
+
+Hence, ridership demand would be satisfied with a capacity of 32 train carriages to depart in each direction per hour, every day. That would adequately be met with with four eight-car trains departing every hour. In other words, someone at the stations in Toronto, Ottawa, and Montreal would wait no more than 15 minutes for the next train - with eight cars - to the other cities, all day, every day.
+
+Travel times should aim for one hour between Montreal and Ottawa, and two hours between Ottawa and Toronto. That would almost certainly steal most of the current market share from airlines, and from driving.
+
+I invite you to speculate on the resulting broader social, economic, and cultural impact.
+
+In terms of service patterns, a route along the lakeshore, probably using the existing CN Kingston Sub, would feature some stops. Possible stops would include Oshawa, Cobourg, Belleville, Kingston, Brockville, Ottawa, and Dorval. Given the frequency of service and the need to maintain high speeds, there will likely be a skip-stop service pattern, where not all trains stop at all stations. Separate local rail service must also be kept to maintain accessibility along the region's smaller communities, which will be easily enabled by the expansion of the corridor to four tracks.
+
+Here's an idea on how that may pan out.
+
+```{r echo = FALSE}
+knitr::include_graphics("P1.svg")
+```
+
+### Economic Analysis
+
+Ah, yes. Money. How much would it cost? Would it be profitable?
+
+```{r echo = FALSE}
+embed_url("https://www.youtube.com/watch?v=5yXtqk3hHoM")
+```
+
+Short answer: Yes. Long answer: With caveats.
+
+#### Operating Profit
+
+Alon has helpfully calculated average fares and operating profits on high speed rail systems in Europe.
+
+<https://pedestrianobservations.com/2020/12/20/metcalfes-law-for-high-speed-rail-redux/>
+
+These are, on average, \$0.135 USD per passenger-km, in 2020 prices. Operating profit, which accounts for operating expenses but not financing costs, averaged \$0.065 USD per passenger-km in 2020 prices. Assuming similar patterns in Canada, and assuming an exchange rate of \$0.75 USD, we could then estimate the operating profit on all the city pairs along Phase 1.
+
+```{r echo = FALSE}
+Phase1_Profit <-read_excel('Windsor-Quebec.xlsx', sheet = 'Profit Phase 1', range = "A12:D17")
+```
+
+```{r echo = FALSE}
+profit_matrix_phase1 <- as.data.frame(Phase1_Profit)
+
+rownames(profit_matrix_phase1) <- profit_matrix_phase1$CMA
+profit_matrix_phase1 <- profit_matrix_phase1[, -1]
+
+profit_matrix_phase1
+```
+
+Here is the estimated total operating profit along the entire route.
+
+```{r echo = FALSE}
+totalProfit_phase1 <- sum(profit_matrix_phase1, na.rm = T)
+totalProfit_phase1
+```
+
+With Phase 1, we could expect an operating profit of \$561 million in 2021 dollars. It is notable that of that, 65% is generated by travel between Montreal and the Golden Horseshoe. 29% is generated by travel between Ottawa and the Golden Horseshoe.
+
+Now that we have have an estimate of operating profit, let's look at costs.
+
+#### Construction Costs Around the World
+
+Another of Alon's research focus has been on construction costs for transit projects around the world.
+
+<https://transitcosts.com/>
+
+Among these, his team has created a dataset of construction costs for high speed rail projects, going back to the mid-1970s. He has also adjusted the costs for inflation as well as purchasing power in different countries.
+
+```{r echo = FALSE}
+HSRCosts <- read_excel('HSR World Costs.xlsx', sheet = 'Sheet1', range = "A1:Q87")
+```
+
+For our purposes, we shall examine those high speed rail projects that meet the following conditions:
+
+-   Construction ended in 2011 or later
+-   In wealthy countries
+-   Tunnelling takes up less than 20% of the route (since there will be virtually no tunnels in our case)
+-   Ordered by per km construction costs, in 2021 USD
+
+```{r echo = FALSE}
+HSRCosts %>% filter(End > 2010) %>% arrange(desc(`Cost/km`)) %>% filter(!(Country %in% c("CN", "MA", "TR"))) %>% filter(`Tunnel %` < 0.2) %>% select('Country', 'Line',	'Start',	'End',	'Length',	'Tunnel %', 'Max speed', 'Cost/km')
+```
+
+We see eleven projects across five countries. It is immediately obvious that the UK's High Speed 2 line, linking London and Birmingham, is vastly more expensive than all the others. Indeed, Alon has written at length about an "English-speaking disease", where construction costs in English-speaking places are vastly higher than in other comparable countries. He even made comments about the explosion of costs in transit projects in Canada in the past 20 years, with a particular focus on cost overruns experienced in the GTA and Ottawa.
+
+<https://pedestrianobservations.com/2021/05/04/i-gave-a-talk-about-canadian-construction-costs/>
+
+<https://www.theglobeandmail.com/canada/article-why-canada-gets-less-for-more-when-it-comes-to-building-transit-2/>
+
+From our chart above, we see that while the UK's HS2 is costing 232 million USD per km, France has averaged a mere 30 million USD per km. Spain is cheaper still, though in some cases costs were cut by building the line as a single track.
+
+A Phase 1 as expensive as HS2 would cost \$187 billion in 2021 dollars - simply absurd beyond belief. It would take over 300 years for operating profits to cover the construction costs.
+
+Hence, we must ensure first that construction costs are low, and comparable to that of France - 30 million per km in 2021 USD, or \$40 million in CAD. That is a simple non-negotiable: all else depends on it.
+
+#### Construction Costs In Canada
+
+```{r echo = FALSE}
+ConstructionCosts <- read_excel('Windsor-Quebec.xlsx', sheet = 'Construction Costs', range = cell_cols("A:D"))
+```
+
+```{r echo = FALSE}
+Phase1_ConsCosts <- ConstructionCosts %>% filter(Phase == "1")
+Phase1_ConsCosts
+```
+
+To estimate the construction costs for Phase 1, we made the following assumptions:
+
+-   Improvements are made to the Go Transit Lakeshore East line in Scarborough, and to the CN Kingston Sub between Pickering and Oshawa, costing on average \$10 million per km.
+-   Between Oshawa and Ottawa, and between Ottawa and Vaudreuil, construction costs average \$40 million per km. Land acquisition costs are minimized by using existing and former rights-of-way.
+-   Between Vaudreuil and Montreal Gare Centrale, an elevated railway is built, completely separating high speed trains from freight trains. This should be co-ordinated with the ARTM, so that high-speed trains, local trains, and Exo trains could all utilize the same track, and that costs could be shared with different levels of government. We assume a cost of \$60 million per km.
+
+```{r echo = FALSE}
+sum(Phase1_ConsCosts$`Cost in 2021 CAD`)
+```
+
+This would amount to a cost of \$23.5 billion in 2021 dollars.
+
+#### Economic Rate of Return
+
+```{r echo = FALSE}
+totalProfit_phase1/sum(Phase1_ConsCosts$`Cost in 2021 CAD`)
+```
+
+With the previously calculated operating profit of \$598 million, this would translate to a real rate of return of 2.4%. Such a project would not be attractive for a purely profit-driven private company, but would be viable for a government that takes into account the positive externalities.
+
+Again, I must repeat that this makes the assumption that construction costs are comparable to France. Until that is achieved, then work should be limited to identifying a route and safeguarding it from development.
+
+## Phase 2
+
+Phase 2 is divided into two sub-phases: 2Q to Quebec City, and 2S to Windsor. Let's examine them independently of each other, before analyzing the complete Phase 2.
+
+### Phase 2Q (Montreal to Quebec Extension)
+
+By 2041, the population of the Quebec City CMA is expected to reach 0.9 million residents. As the eastern edge of our corridor, and with no significant cities further east within the range of high speed railways, serving Quebec City presents a challenge.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+phase2q_reg <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "Regular", verbose=FALSE)
+phase2q_reg2 <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "Regular 2", verbose=FALSE)
+phase2q_tunnel <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "Tunnel", verbose=FALSE)
+phase2q_160 <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "160", verbose=FALSE)
+phase2q_200 <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "200", verbose=FALSE)
+phase2q_250 <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "250", verbose=FALSE)
+phase2q_300 <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "300", verbose=FALSE)
+
+phase2q_stations <- readOGR(dsn = "KML/Phase 2Q.kml", layer = "Stations", verbose=FALSE)
+```
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 2Q Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()   
+    
+    m <- m %>%
+      
+        addPolylines(data = phase2q_tunnel, color = "black", weight = 4, opacity = 0.5) %>%
+        addPolylines(data = phase2q_reg2, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2q_reg, color = "black", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_160, color = "yellow", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_200, color = "#ffaa00", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_250, color = "#ff5500", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_300, color = "red", weight = 2, opacity = 1) %>%
+        addMarkers(data = phase2q_stations, icon = large_Station) %>%
+        addLabelOnlyMarkers(data = phase2q_stations,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLegend("bottomright", 
+                  colors = c("black",  "yellow", "#ffaa00", "#ff5500", "red"),
+                  labels = c("Regular Track", "Max Speed 160 km/h", "Max Speed 200 km/h", "Max Speed 250 km/h", "Max Speed >300 km/h"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+        addLegendImage(images = 'http://maps.google.com/mapfiles/kml/shapes/rail.png',
+                 labels = 'All Trains Stop',width = 16, height = 16,
+                 orientation = 'vertical',
+                 title = "Stations",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+ shinyApp(ui, server) 
+```
+
+The current High Frequency Rail plans call for an upgrading of the CFQG line between Laval and Quebec City along the north shore of the St. Lawrence River, with a stop at Trois-Rivières. The line is straight, and could be upgraded to high speed standards with minimal land acquisition costs, grade separation, and more curve straightening. By using part of the right-of-way of Autoroute 40 between Portneuf and Quebec City, we could further increase speeds and reduce travel times.
+
+There's a minor issue about the line's terminus in Montreal: in the past, trains heading from Quebec City could use the Mount Royal Tunnel to terminate at Montreal's Gare Centrale. The REM now makes that unavailable. Trains will have to go around the mountain to approach Gare Centrale from the south, leading to additional travel time. Instead, a new station is already under construction at Côte-de-Liesse to accommodate a connection between the REM and the Mascouche Line of Exo. An additional platform could be added to accommodate trains heading to Quebec City. This would minimize travel times between Quebec City and Montreal, and still provide a convenient connection to those travelling to and from Phase 1. In the long term, an additional rail tunnel under the mountain linking Gare Centrale and Laval would allow for direct trains to and from Quebec City.
+
+Completing Phase 2Q non-negotiable for any government at the federal or provincial level, yet ridership will be significantly less than for Phase 1. Let's look at the numbers.
+
+#### Ridership
+
+```{r echo = FALSE}
+Phase2Q <- read_excel('Windsor-Quebec.xlsx', sheet = 'Phase 2Q', range = "A1:F7")
+```
+
+```{r echo = FALSE}
+Phase2Q_Ridership <- Phase2Q[,c("Destination","Ridership (2041)")]
+Phase2Q_Ridership
+
+Phase2Q_Ridership <- Phase2Q_Ridership %>%
+  mutate(Source = "Québec", .before = 1) %>%
+  rename(Flow = `Ridership (2041)`)
+```
+
+Combined annual ridership on Phase 2Q is estimated at 2.67 million, of which 1.08 million would be to/from Montreal. Interestingly, ridership between Quebec City and the Golden Horseshoe would be 1.14, slightly more than with Montreal.
+
+Let's visualize this on a map.
+
+```{r echo = FALSE}
+flow_data_phase2Q <- source_destination_coord(Phase2Q_Ridership, can_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 2Q"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase2Q$Source,
+      flow_data_phase2Q$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase2Q$Flow[flow_data_phase2Q$Source == from_cma & flow_data_phase2Q$Destination == to_cma]
+        
+        from_coords <- can_cities_coordinates[can_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_cities_coordinates[can_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase2Q$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase2Q$Longitude.x + flow_data_phase2Q$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase2Q$Latitude.x + flow_data_phase2Q$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase2Q$Source, " - " , flow_data_phase2Q$Destination, ":", round(flow_data_phase2Q$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+      
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+This confirms what would be intuitive - Phase 2Q would be much less intensely used than Phase 1. Let's draw the ridership density map.
+
+#### Density
+
+```{r echo = FALSE}
+segments_phase2q <- segments %>% filter(!is.na(Phase2Q))
+segments_phase2q <- segments_phase2q %>% select(c(Point1,	Point2,	Phase2Q))
+names(segments_phase2q) <- c("Source", "Destination", "Flow")
+
+segments_phase2q <- source_destination_coord(segments_phase2q, can_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 2Q"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase2q$Source,
+      segments_phase2q$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase2q$Flow[segments_phase2q$Source == from_cma & segments_phase2q$Destination == to_cma]
+        
+        from_coords <- can_cities_coordinates[can_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_cities_coordinates[can_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = 1,
+      weight = segments_phase2q$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase2q$Longitude.x + segments_phase2q$Longitude.y) / 2
+    midpoint_lat <- (segments_phase2q$Latitude.x + segments_phase2q$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase2q$Source, " - " , segments_phase2q$Destination, ":", round(segments_phase2q$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+As explained earlier, estimated annual ridership along Phase 2Q would be 2.33 million. However, Phase 2Q also leads to an increase in ridership in those segments built in Phase 1: after all, someone travelling from Quebec City to Toronto would also travel between Montreal and Toronto, and increase ridership on that segment. We will see that as the network expands, the benefits accumulate beyond merely the newly built section.
+
+#### Service Pattern
+
+With an annual ridership of 2.67 million, we can estimate the frequency of service required to meet the demand. As explained in Phase 1, each train car departing each hour through the day would be expected to carry 0.375 million passengers throughout the year.
+
+$$
+2.33/0.375 = 6.21
+$$
+
+Hence, on Phase 2Q, one train per hour with six carriages would be sufficient to meet ridership demand. While that is significantly less than the four trains per hour operating along Phase 1, it is still a significant improvement from the status quo: there are merely five departures on Via Rail between Montreal and Quebec City.
+
+With a length of approximately 270 km, the journey could be completed in one hour, or perhaps 75 minutes. The idea of one train per hour that takes an hour - or a little more - would also bring significant benefits to Quebec as a province. That would be for you to speculate on.
+
+Local trains serving smaller communities along the route would also be operated, with loops allowing for high speed trains to pass at full speed.
+
+The completion of Phase 2Q would increase ridership along Phase 1, but would not require an increase in either frequency or train length.
+
+#### Economic Analysis
+
+Let's calculate the expected increase in operating profit caused by Phase 2Q.
+
+```{r echo = FALSE}
+Phase2Q_Profit <- Phase2Q[,c("Destination","Profit (2041)")]
+Phase2Q_Profit
+```
+
+```{r echo = FALSE}
+totalProfit_phase2Q <- sum(Phase2Q_Profit$`Profit (2041)`) + totalProfit_phase1
+totalProfit_phase2Q
+```
+
+We see that Phase 2Q increases operating profit by \$103 million across the entire line from Toronto to Quebec City, not just from Montreal to Quebec City. In fact, \$59 million, or 58%, of the increased operating profit, is generated by passengers travelling between Quebec City and the Golden Horseshoe. This is a positive demonstration of the network effect.
+
+However, the increase in operating profit must be considered in relation with the construction cost.
+
+As mentioned earlier, one train per hour would be sufficient to meet ridership demand. In our analysis of construction costs around the world, we also mentioned that one potential saving would be to build the line as a single track, [as has been done in Spain](https://www.railjournal.com/passenger/high-speed/spain-to-open-first-single-track-high-speed-line/).
+
+The length of Phase 2Q is about 270 km, and there will be a stop at the exact midpoint at Trois-Rivières. Operations could be scheduled such that trains depart Quebec City and Montreal simultaneously every hour, and arrive simultaneously at Trois-Rivières, where they would meet each other, before continuing the journey. Such an arrangement will require punctuality and reliability, but would allow for a maximum use of resources.
+
+With that in mind, we are assuming that construction costs for the single-track Phase 2Q would be 60% of that of Phase 1: \$24 million per km in 2021 prices.
+
+```{r echo = FALSE}
+Phase2Q_ConsCosts <- ConstructionCosts %>% filter(Phase == "2Q")
+Phase2Q_ConsCosts
+
+sum(Phase2Q_ConsCosts$`Cost in 2021 CAD`)
+```
+
+The total cost would be \$6.12 billion.
+
+```{r echo = FALSE}
+totalProfit_phase2Q/sum(Phase2Q_ConsCosts$`Cost in 2021 CAD`)
+```
+
+With the increased operating profit along both Phases 1 and 2Q, which we previously estimated as \$108 million, Phase 2Q - engineered to be single track - would see a Real Rate of Return of 1.7%. This is less than the Phase 1 RRR of 2.4%, and would be even less attractive to a private investor. Yet, the political imperative will demand its construction if Phase 1 is already complete; this should be undertaken with as much value engineering as feasible, while delivering to les Québécois the service they deserve.
+
+### Phase 2S (Toronto - Windsor Extension)
+
+A high speed railway between Toronto and Windsor; with stops at Pearson Airport, Kitchener, and London, is a similarly popular topic of discussion. A previous provincial government had started such a feasibility study, which was later cancelled.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+phase2s_reg <- readOGR(dsn = "KML/Phase 2S.kml", layer = "Regular", verbose=FALSE)
+phase2s_200 <- readOGR(dsn = "KML/Phase 2S.kml", layer = "200", verbose=FALSE)
+phase2s_250 <- readOGR(dsn = "KML/Phase 2S.kml", layer = "250", verbose=FALSE)
+phase2s_300 <- readOGR(dsn = "KML/Phase 2S.kml", layer = "300", verbose=FALSE)
+
+phase2s_allStops <- readOGR(dsn = "KML/Phase 2S.kml", layer = "All Stops", verbose=FALSE)
+phase2s_someStops <- readOGR(dsn = "KML/Phase 2S.kml", layer = "Some Stop", verbose=FALSE)
+```
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 2S Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()   
+    
+    m <- m %>%
+      
+        addPolylines(data = phase2s_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_250, color = "#ff5500", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase2s_allStops, icon = large_Station) %>%
+        addMarkers(data = phase2s_someStops, icon = small_Station) %>%
+        addLabelOnlyMarkers(data = phase2s_allStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLabelOnlyMarkers(data = phase2s_someStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "8px"))
+            )  %>%
+        addLegend("bottomright", 
+                  colors = c("black",  "yellow", "#ffaa00", "#ff5500", "red"),
+                  labels = c("Regular Track", "Max Speed 160 km/h", "Max Speed 200 km/h", "Max Speed 250 km/h", "Max Speed >300 km/h"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+        addLegendImage(images = c('http://maps.google.com/mapfiles/kml/shapes/rail.png',
+                            'http://maps.google.com/mapfiles/kml/shapes/rail.png'),
+                 labels = c('All Trains Stop', 'Some Trains Stop'),width = c(16,8), height = c(16,8),
+                 orientation = 'vertical',
+                 title = "Stations",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+ shinyApp(ui, server) 
+```
+
+For our discussion, we will assume that Phase 2S will features trains that, after departing Toronto Union Station, use the already expanded Weston Sub to a new station serving Pearson Airport. From then, a new line will be built parallel to Highway 407 along the hydro corridor, and then following Highway 401 to Aberfoyle. From there, the line will course towards Kitchener, where it will serve the currently proposed Kitchener Central Station. It would then extend west, coursing straight to London, after which it would follow the existing CN Chatham Sub towards Windsor. Most of the line is flat, and the section west of London follows an existing railway, which would maximize speed and minimize land acquisition costs.
+
+#### Mo-Town
+
+Although Phase 2S formally connects Toronto and Windsor, Metro Detroit will become the trip generator for a large proportion of passengers. Hence, we should also include the Detroit MSA (projected 2041 population: 4.2 million) into our ridership calculations.
+
+```{r echo = FALSE}
+usa_cities_coordinates <- read_excel('Windsor-Quebec.xlsx', sheet = 'Population', range = "A15:E31")
+
+usa_cities_coordinates <- usa_cities_coordinates %>% rename("CMA" = "MSA", "2021 Census" = "2021 Estimate")
+
+detroit <- usa_cities_coordinates %>% filter(CMA == "Detroit")
+
+detroit
+```
+
+Let's visualize it on our map.
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Major CMAs along Windsor - Quebec Corridor and Metro Detroit, by 2041 Projected Population"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+
+         # Add circles and lines with toggling labels
+     m <- m %>%
+       
+       addCircleMarkers(
+         data = detroit,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+              
+       addCircleMarkers(
+         data = can_cities_coordinates,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+       
+       addLabelOnlyMarkers(
+         data = detroit,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(detroit$CMA, "  (", detroit$`2041 Projection`, ")"),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "left",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA, "  (", can_cities_coordinates$`2041 Projection`, ")"),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+       addLayersControl(
+         overlayGroups = c("Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+   })
+ }
+
+ shinyApp(ui, server)
+```
+
+#### Modifying Metcalfe's Law for Cross Border Travel
+
+At first, including such a large population centre into our calculation would appear as a great boon to our ridership figures. However, the border presents an obstacle to international travel. It deters many people on both sides from travel; whether due to the hassle of the requirements for cross-border travel, or through the reduced personal and business connections that the border poses. Figures from Europe indicate that - even between nations of the borderless Schengen Area - national borders significantly affect human connections and travel patterns.
+
+Hence, Alon's formula for estimating ridership between cities should be modified for cross-border travel.
+
+I will introduce a new constant, m, into our formula. It will represent the extent to which people in any two cities across the border are deterred from travel as a result of the border. If m = 1, the border would pose no obstacle, and travel demand would be as if the border didn't exist. If m = 2, half of the population of both cities would be deterred from travel as a result of the border. The higher m, the more that demand for travel is suppressed. Hence, the formula is modified as:
+
+$$
+R_{A,B}= 75000*\frac{(\frac{P_A}{m}*\frac{P_B}{m})^{0.8}}{{max(500,d_{A, B})}^{2}}
+$$
+
+Based on some back-of-the-envelope calculations involving cross-border air traffic data, I estimate m to be around the magnitude of 2. It could be higher or lower, and certainly fluctuates due to a variety of factors such as the exchange rate, travel requirements, and the like. But, let's assume that m = 2. That means our formula is:
+
+$$
+R_{A,B}= 75000*\frac{(\frac{P_A}{2}*\frac{P_B}{2})^{0.8}}{{max(500,d_{A, B})}^{2}} = 75000*\frac{(\frac{P_A*P_B}{4})^{0.8}}{{max(500,d_{A, B})}^{2}} = 75000*\frac{(\frac{1}{4})^{0.8}(P_A*P_B)^{0.8}}{{max(500,d_{A, B})}^{2}} = 75000*\frac{4^{-0.8}(P_A*P_B)^{0.8}}{{max(500,d_{A, B})}^{2}}
+$$
+
+In other words, we assume that the border causes travel between any two cities across it to be 33%, of what it would be if Canada and the US were hypothetically one nation.
+
+Another factor to consider is the unique status of French in Quebec. Travel between Quebec and the US is influenced not just by the border itself, but also by the language difference. We shall further modify our formula in cases where the cities are in Quebec and the US. Let's introduce another constant, n, which represents the extent to which language influences travel between Quebec and the US.
+
+$$
+R_{A,B}= 75000*\frac{4^{-0.8}(\frac{P_A}{n}*\frac{P_B}{n})^{0.8}}{{max(500,d_{A, B})}^{2}}
+$$
+
+My very rough estimate, also derived from cross-border air traffic data, is that n is around 1.5. Let's insert n into our formula.
+
+$$
+R_{A,B}= 75000*\frac{4^{-0.8}(\frac{P_A}{1.5}*\frac{P_B}{1.5})^{0.8}}{{max(500,d_{A, B})}^{2}} = 75000*\frac{9^{-0.8}({P_A}*{P_B})^{0.8}}{{max(500,d_{A, B})}^{2}}
+$$
+
+Hence, we expect that travel between a city in Quebec and a city in the US would be 17% of what it would be if the border and the language difference didn't exist - and thankfully they do!
+
+Now, with that in mind, we are able to estimate ridership between Detroit and cities along Phase 1 and 2S, allowing us to estimate ridership along all of Phase 2S.
+
+#### Ridership
+
+```{r echo = FALSE}
+Phase2S_Ridership <-read_excel('Windsor-Quebec.xlsx', sheet = 'Ridership Phase 2S', range = "A15:H19")
+
+  
+flow_matrix_phase2s <- as.data.frame(Phase2S_Ridership)
+
+
+rownames(flow_matrix_phase2s) <- flow_matrix_phase2s$CMA
+flow_matrix_phase2s <- flow_matrix_phase2s[, -1]
+
+flow_matrix_phase2s
+```
+
+We see how adding Detroit into our calculations - even given the obstacle posed by the border - influences ridership estimates. It's estimated that annual ridership between Toronto and Detroit would be 1.96 million, while annual ridership between Toronto and Windsor is 1.09 million. In other words, once Phase 2S is complete, more than half of those starting their journey in Toronto and ending in Windsor actually plan to then cross the border to Detroit.
+
+That explains the complicated step of adding Detroit and then modifying our formula - cross-border travel is a major unknown that would definitely impact our calculations.
+
+London and Kitchener are also significant trip generators - chiefly to Toronto, but traffic to the other stops is non-trivial.
+
+Now, let's plot the ridership patterns of Phase 2S on a map.
+
+```{r echo = FALSE}
+can_det_cities_coordinates <- rbind(can_cities_coordinates, detroit)
+
+flow_data_phase2s <- convert_flow_matrix_to_dataframe(flow_matrix_phase2s)
+
+flow_data_phase2s <- source_destination_coord(flow_data_phase2s, can_det_cities_coordinates)
+```
+
+```{r echo = FALSE}
+
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 2S"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase2s$Source,
+      flow_data_phase2s$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase2s$Flow[flow_data_phase2s$Source == from_cma & flow_data_phase2s$Destination == to_cma]
+        
+        from_coords <- can_det_cities_coordinates[can_det_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_det_cities_coordinates[can_det_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase2s$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase2s$Longitude.x + flow_data_phase2s$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase2s$Latitude.x + flow_data_phase2s$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase2s$Source, " - " , flow_data_phase2s$Destination, ":", round(flow_data_phase2s$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+
+       addLabelOnlyMarkers(
+         data = detroit,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(detroit$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%      
+            
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      addCircleMarkers(
+         data = detroit,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%       
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+Clearly, lines connecting Detroit with cities on the corridor overshadow the rest of Phase 2S. However, other cities are also significant trip generators. Let's plot the ridership density map.
+
+#### Density
+
+```{r echo = FALSE}
+segments_phase2s <- segments %>% filter(!is.na(Phase2S))
+segments_phase2s <- segments_phase2s %>% select(c(Point1,	Point2,	Phase2S))
+names(segments_phase2s) <- c("Source", "Destination", "Flow")
+
+segments_phase2s <- source_destination_coord(segments_phase2s, can_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 2S"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase2s$Source,
+      segments_phase2s$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase2s$Flow[segments_phase2s$Source == from_cma & segments_phase2s$Destination == to_cma]
+        
+        from_coords <- can_cities_coordinates[can_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_cities_coordinates[can_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = 1,
+      weight = segments_phase2s$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase2s$Longitude.x + segments_phase2s$Longitude.y) / 2
+    midpoint_lat <- (segments_phase2s$Latitude.x + segments_phase2s$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase2s$Source, " - " , segments_phase2s$Destination, ":", round(segments_phase2s$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+      
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+Under Phase 2S, ridership density is much more variable. While annual ridership along the Toronto - Kitchener section is 8.26 million, this drops off to 5.37 million between Windsor and London. Phase 2S drives an increase in ridership density on Phase 1 (e.g. riders between Ottawa and London), yet this is modest compared to the length of Phase 2S.
+
+#### Service Pattern
+
+As we recall from the previous map, ridership density along Phase 2S varies. Hence, service patterns will also not be uniform between Toronto and Windsor.
+
+We see that on the Windsor to London leg, annual ridership is 5.37 million. That segment would be adequately served by two eight-car trains per hour, which would be capable of carrying six million passengers annually. While that capacity would also be adequate for the London to Kitchener leg, it would be insufficient for the Kitchener to Toronto leg, where ridership is 8.26 million. Hence, that leg should be served by an additional two trains per hour of four cars each, with a total capacity on that leg of nine million. Hence, the general service pattern for Phase 2S upon completion would be:
+
+-   Toronto - Windsor: 2 trains per hour, 8 cars each
+-   Toronto - Kitchener: 2 trains per hour, 4 cars each
+
+Hence, Toronto - Kitchener would be served by a train every 15 minutes, while the rest of the line would see service every 30 minutes. While less dramatic than on Phase 1, it is still incomparable to the auto-dependent status quo.
+
+Potential travel times would be:
+
+-   Toronto - Kitchener: 45 minutes
+-   Kitchener - London: 25 minutes
+-   London - Windsor: 45 minutes
+
+Additional stops could be built at Aberfoyle (to serve Guelph) and Chatham. Between London and Windsor, an additional local train service would be provided to serve the smaller communities en route.
+
+I would also like to invite you to contemplate the changes that such an improvement in mobility would bring to South Western Ontario.
+
+#### Economic Analysis
+
+Let's calculate the expected increase in operating profit delivered by Phase 2S. This is calculated by the total operating profit of both Phase 1 and Phase 2S, subtracted by the Phase 1 operating profit as previously calculated.
+
+```{r echo = FALSE}
+Phase2S_Profit <-read_excel('Windsor-Quebec.xlsx', sheet = 'Profit Phase 2S', range = "A15:H23")
+Phase2S_Profit
+```
+
+We see that the most profitable city pair that was generated by Phase 2S was Toronto - Detroit, at \$62 million; followed by Toronto - Windsor at \$34 million.
+
+```{r echo = FALSE}
+profit_matrix_phase2s <- as.data.frame(Phase2S_Profit)
+
+rownames(profit_matrix_phase2s) <- profit_matrix_phase2s$CMA
+profit_matrix_phase2s <- profit_matrix_phase2s[, -1]
+```
+
+```{r echo = FALSE}
+totalProfit_phase2s <- sum(profit_matrix_phase2s, na.rm = T)
+totalProfit_phase2s - totalProfit_phase1
+```
+
+Phase 2S also increases annual operating profit by \$259 million.
+
+```{r echo = FALSE}
+Phase2S_ConsCosts <- ConstructionCosts %>% filter(Phase == "2S")
+Phase2S_ConsCosts
+
+sum(Phase2S_ConsCosts$`Cost in 2021 CAD`)
+```
+
+Here, we estimate construction costs for Phase 2S. We make the following assumptions:
+
+-   Toronto - Pearson: No significant works expected, as the Go Weston Sub is already undergoing electrification.
+-   Pearson - Kitchener: Built largely on elevated viaducts, raising construction costs to \$60 million per km.
+-   Kitchener - London & London - Windsor: Built on flat land and (west of London) using existing rail right of way.
+
+Hence, construction cost is expected at \$15.5 billion.
+
+```{r echo = FALSE}
+(totalProfit_phase2s-totalProfit_phase1)/sum(Phase2S_ConsCosts$`Cost in 2021 CAD`)
+```
+
+This means that the RRR for Phase 2S is 1.7%, similar to Phase 2Q.
+
+### Summary
+
+The completion of Phase 2 - with extensions both to Quebec City and Windsor - would mean a continuous high speed rail corridor between Windsor and Quebec City, linking all the major urban areas of Ontario and Quebec. While the financial rate of return will be modest even with construction costs at levels comparable to France, the broader social returns would be incalculable: increased mobility, productivity, and leisure; decreased road and air congestion as well as costs, and so forth.
+
+Let's look at the infrastructure map of the corridor;
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 2 Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()   
+    
+    m <- m %>%
+        addPolylines(data = phase1_replace, color = "navy", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_160, color = "yellow", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase1_allStops, icon = large_Station) %>%
+        addMarkers(data = phase1_someStops, icon = small_Station) %>%
+        addLabelOnlyMarkers(data = phase1_allStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLabelOnlyMarkers(data = phase1_someStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "8px"))
+            )  %>%
+        addPolylines(data = phase2q_tunnel, color = "black", weight = 4, opacity = 0.5) %>%
+        addPolylines(data = phase2q_reg2, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2q_reg, color = "black", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_160, color = "yellow", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_200, color = "#ffaa00", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_250, color = "#ff5500", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_300, color = "red", weight = 2, opacity = 1) %>%
+        addMarkers(data = phase2q_stations, icon = large_Station) %>%
+        addLabelOnlyMarkers(data = phase2q_stations,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%      
+        addPolylines(data = phase2s_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_250, color = "#ff5500", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase2s_allStops, icon = large_Station) %>%
+        addMarkers(data = phase2s_someStops, icon = small_Station) %>%
+        addLabelOnlyMarkers(data = phase2s_allStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLabelOnlyMarkers(data = phase2s_someStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "8px"))
+            )  %>%
+        addLegend("bottomright", 
+                  colors = c("black",  "yellow", "#ffaa00", "#ff5500", "red", "navy"),
+                  labels = c("Regular Track", "Max Speed 160 km/h", "Max Speed 200 km/h", "Max Speed 250 km/h", "Max Speed >300 km/h", "Replacement Track for CN Rail"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+        addLegendImage(images = c('http://maps.google.com/mapfiles/kml/shapes/rail.png',
+                            'http://maps.google.com/mapfiles/kml/shapes/rail.png'),
+                 labels = c('All Trains Stop', 'Some Trains Stop'),width = c(16,8), height = c(16,8),
+                 orientation = 'vertical',
+                 title = "Stations",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+ shinyApp(ui, server) 
+```
+
+Let's display the ridership matrix along the entire line.
+
+```{r echo = FALSE}
+Phase2_Ridership <-read_excel('Windsor-Quebec.xlsx', sheet = 'Phase 2 Summary', range = "A1:I10")
+
+flow_matrix_phase2 <- as.data.frame(Phase2_Ridership)
+
+rownames(flow_matrix_phase2) <- flow_matrix_phase2$CMA
+flow_matrix_phase2 <- flow_matrix_phase2[, -1]
+
+flow_matrix_phase2
+```
+
+```{r echo = FALSE}
+flow_data_phase2 <- convert_flow_matrix_to_dataframe(flow_matrix_phase2)
+
+flow_data_phase2 <- source_destination_coord(flow_data_phase2, can_det_cities_coordinates)
+```
+
+And let's display them on a map.
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 2"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase2$Source,
+      flow_data_phase2$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase2$Flow[flow_data_phase2$Source == from_cma & flow_data_phase2$Destination == to_cma]
+        
+        from_coords <- can_det_cities_coordinates[can_det_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_det_cities_coordinates[can_det_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase2$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase2$Longitude.x + flow_data_phase2$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase2$Latitude.x + flow_data_phase2$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase2$Source, " - " , flow_data_phase2$Destination, ":", round(flow_data_phase2$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = detroit,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(detroit$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%      
+            
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      addCircleMarkers(
+         data = detroit,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%       
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+```{r echo = FALSE}
+segments_phase2 <- segments %>% filter(!is.na(Phase2))
+segments_phase2 <- segments_phase2 %>% select(c(Point1,	Point2,	Phase2))
+names(segments_phase2) <- c("Source", "Destination", "Flow")
+
+segments_phase2 <- source_destination_coord(segments_phase2, can_cities_coordinates)
+```
+
+Finally, let's display ridership density along the entire corridor.
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 2"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase2$Source,
+      segments_phase2$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase2$Flow[segments_phase2s$Source == from_cma & segments_phase2$Destination == to_cma]
+        
+        from_coords <- can_cities_coordinates[can_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- can_cities_coordinates[can_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = 1,
+      weight = segments_phase2$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase2$Longitude.x + segments_phase2$Longitude.y) / 2
+    midpoint_lat <- (segments_phase2$Latitude.x + segments_phase2$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase2$Source, " - " , segments_phase2$Destination, ":", round(segments_phase2$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+      
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+As we see, the ridership density is highest between Toronto and Ottawa, followed by Ottawa and Montreal. The extension to Windsor would bring more modest ridership. Finally, the extension to Quebec City sees the most modest ridership.
+
+Here's an idea on how the service might operate.
+
+```{r echo = FALSE}
+knitr::include_graphics("P2.svg")
+```
+
+Let's examine the profit matrix.
+
+```{r echo = FALSE}
+Phase2_Profit <-read_excel('Windsor-Quebec.xlsx', sheet = 'Phase 2 Summary', range = "A14:I23")
+profit_matrix_phase2 <- as.data.frame(Phase2_Profit)
+profit_matrix_phase2
+```
+
+Again, we see that Toronto - Montreal and Toronto - Ottawa are the most profitable city pairs, by a wide margin. Far behind them are Toronto - Detroit (via Windsor) and Toronto - Quebec City. These four generate a total operating profit of \$480 million.
+
+```{r echo = FALSE}
+rownames(profit_matrix_phase2) <- profit_matrix_phase2$CMA
+profit_matrix_phase2 <- profit_matrix_phase2[, -1]
+
+totalProfit_phase2 <- sum(profit_matrix_phase2, na.rm = T)
+totalProfit_phase2
+```
+
+The total operating profit along all of Phase 2 is \$931 million. That means that, while the two four city pairs contribute 52% of the total operating profit, the other half is generated by all the other city pairs. That demonstrates the importance of smaller metropolitan areas to the project.
+
+```{r echo = FALSE}
+Phase2_ConsCosts <- subset(ConstructionCosts, grepl("[2]", Phase))
+Phase2_ConsCosts
+```
+
+As we see, the combined cost of both sub-phases of Phase 2 is \$21.6 billion.
+
+```{r echo = FALSE}
+(totalProfit_phase2-totalProfit_phase1)/sum(Phase2_ConsCosts$`Cost in 2021 CAD`)
+```
+
+That investment thus has an RRR of 1.7%, a level that would only be possible through government funding. Yet the positive externalities would make such a project a political as well as economic imperative.
+
+Phase 2 completes high speed rail along the Windsor - Quebec City corridor. But, we can surely go further.
+
+## Phase 3
+
+```{r echo = FALSE}
+embed_url("https://www.youtube.com/watch?v=SEy_22hG2j4")
+```
+
+What about extensions to the US? For all the mountains of studies and political attention given to the Windsor - Quebec City corridor, very little has been talked about extensions across the border. Yet, as we shall see, three potential extensions to the US hold exceptionally promising value.
+
+We assume that the US will have built an extensive network at least across the northeastern states and the Midwest. Ironically, it appears from [various documents](https://www.transportation.gov/content/high-speed-rail) from the US Department of Transportation that there's more interest in the US to extend its high speed rail network to serve Canada, than from Canadian authorities to extend its network south.
+
+Let's go back to Alon, who has [written extensively about](https://pedestrianobservations.com/category/transportation/high-speed-rail/) the prospects for high speed rail in the US, including ridership projections and construction costs.
+
+[This map here](https://pedestrianobservations.com/2022/12/22/midwestern-urban-geography-and-high-speed-rail/) shows his proposed map for the US. Note that his map includes extensions serving Canada's top three urban centres.
+
+Alon even specifically examined extensions from [Buffalo to Toronto, and from Albany to Montreal](https://pedestrianobservations.com/2020/02/13/metcalfes-law-for-high-speed-rail/). He called this a "northern cross", where high speed rail lines from Toronto, Montreal, Boston, and New York City converge at Albany. According to his analysis, once the line from Albany to Buffalo has been completed, a further extension to Toronto would render an ROR of about 20% - far higher than what we've seen so far. The extension to Montreal would yield an ROI of 7%, also much higher than in our Phases 1 or 2. His blog mentions a [potential link between Windsor and Detroit - and onward to Chicago - in passing](https://pedestrianobservations.com/2019/02/10/high-speed-rail-for-the-eastern-united-states/), by highlighting the importance of cross-border travel to the success of the entire Toronto - Windsor corridor.
+
+His models assume an absence of friction caused by the border, and - in Quebec's case - the language difference. To his credit, [he notes that serious friction would damage the business case for these cross-border lines](https://pedestrianobservations.com/2011/06/19/international-links-underperform/). But, the high ROIs that he estimated means that we should still examine the potential that cross-border travel brings to our network.
+
+Hence, we shall perform the same calculations as we did in Phases 1 and 2, but by using our formulas that take these into account.
+
+Here's the formula to estimate ridership between city pairs along the border, without the language difference.
+
+$$
+R_{A,B} = 75000*\frac{4^{-0.8}(P_A*P_B)^{0.8}}{{max(500,d_{A, B})}^{2}}
+$$
+
+Recall that the populations of the Toronto CMA and the New York MSA, estimated in 2041, are 10.0 and 22.3 million respectively. The distance between them by a hypothetical high speed railway is approximately 845 km.'
+
+$$
+R_{Tor,NYC} = 75000*\frac{4^{-0.8}(P_{Tor}*P_{NYC})^{0.8}}{{max(500,d_{Tor, NYC})}^{2}} = 75000*\frac{4^{-0.8}(10*22.3)^{0.8}}{{max(500,845)}^{2}} = 75000*\frac{4^{-0.8}*75.62}{845^{2}} = 2.62
+$$
+
+Hence, we can expect annual ridership between Toronto and New York of 2.62 million. By comparison, that is not much less than the estimated annual ridership between Toronto and Ottawa of 3.16 million.
+
+### A Much Wider Look
+
+Let's look at all the Metropolitan Statistical Areas as defined by the US Census Bureau, with an estimated population of above 500,000 in 2041. We'll limit this to the northeastern states as well as parts of the Midwest that are close enough to Canada.
+
+```{r echo = FALSE}
+usa_cities_coordinates
+```
+
+Let's plot them, and the Canadian CMAs, on the map.
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Major Canadian CMAs and and US MSAs Within HSR Range, by 2041 Projected Population"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+
+         # Add circles and lines with toggling labels
+     m <- m %>%
+       
+       addCircleMarkers(
+         data = usa_cities_coordinates,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+              
+       addCircleMarkers(
+         data = can_cities_coordinates,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+       
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA, "  (", usa_cities_coordinates$`2041 Projection`, ")"),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA, "  (", can_cities_coordinates$`2041 Projection`, ")"),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+       
+       addLayersControl(
+         overlayGroups = c("Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+   })
+ }
+
+ shinyApp(ui, server)
+```
+
+Phase 3 will be divided into three segments:
+
+-   Phase 3W: a tunnel from Windsor to Detroit, with onward connections towards Chicago and Ohio.
+-   Phase 3N: an upgrade of the Go Transit Lakeshore West and Niagara lines, with onward connections to Buffalo, New York City, and Boston.
+-   Phase 3N: a new line from Montreal to the US border, with connections to Burlington, New York City, and Vermont.
+
+### Phase 3W (Windsor - Detroit Tunnel)
+
+With a high speed railway linking Windsor and Toronto, and another line linking Detroit and cities such as Chicago and Cleveland, a cross-border link across the Detroit River would be a logical next step. In Detroit, the former Michigan Central Station is being renovated; once complete, there would be space for passenger trains, thus making it a gateway for trains under the Michigan Central railway tunnel - currently owned by CP Rail.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+phase3w_reg <- readOGR(dsn = "KML/Phase 3W.kml", layer = "Tracks", verbose=FALSE)
+phase3w_cbs <- readOGR(dsn = "KML/Phase 3W.kml", layer = "Cross Border Shuttle", verbose=FALSE)
+
+phase3w_stations <- readOGR(dsn = "KML/Phase 3W.kml", layer = "Stations", verbose=FALSE)
+phase3w_checkpoints <- readOGR(dsn = "KML/Phase 3W.kml", layer = "Border Checkpoints", verbose=FALSE)
+
+check <- makeIcon(
+  iconUrl = "http://maps.google.com/mapfiles/kml/shapes/police.png",
+  iconWidth = 16, iconHeight = 16,
+  iconAnchorX = 0, iconAnchorY = 8
+)
+```
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 3W Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()   
+    
+    m <- m %>%
+      
+        addPolylines(data = phase3w_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3w_cbs, color = "#32CD32", weight = 2, opacity = 1) %>%
+        addMarkers(data = phase3w_stations, icon = large_Station) %>%
+        addMarkers(data = phase3w_checkpoints, icon = check) %>%
+        addLabelOnlyMarkers(data = phase3w_stations,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLegend("bottomright", 
+                  colors = c("black",  "#32CD32"),
+                  labels = c("Regular Track", "Windsor-Detroit Shuttle Train"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+        addLegendImage(images = c('http://maps.google.com/mapfiles/kml/shapes/rail.png','http://maps.google.com/mapfiles/kml/shapes/police.png'),
+                 labels = c('Stations', 'Pre-clearance Checkpoint'),width = c(16,16), height = c(16,16),
+                 orientation = 'vertical',
+                 title = "Icons",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+ shinyApp(ui, server)   
+```
+
+The river crossing itself would consist of an automatic shuttle train running in a single tunnel under the river. This could be established by purchasing the western tube from CP Rail, which appears to be currently inactive.
+
+A new station would be built in Windsor, near the tunnel portal and possibly by College Street. It would include space for tracks and platforms. South of the new station, an elevated viaduct would be built, following the Essex Terminal Railway to the existing Via Rail Chatham Sub, which will have been upgraded to high speed standards in Phase 2S.
+
+#### Ridership
+
+Let's calculate the matrix of ridership on newly enabled city pairs.
+
+```{r echo = FALSE}
+Phase3W_Ridership <-read_excel('Windsor-Quebec.xlsx', sheet = 'Ridership Phase 3W', range = "A30:J46")
+
+flow_matrix_phase3w <- as.data.frame(Phase3W_Ridership)
+
+rownames(flow_matrix_phase3w) <- flow_matrix_phase3w$CMA
+
+flow_matrix_phase3w <- flow_matrix_phase3w[, -1]
+
+flow_matrix_phase3w["Detroit", which(names(flow_matrix_phase3w) != "Windsor")] <- NA
+
+flow_matrix_phase3w
+```
+
+By far the most prominent one is Chicago - Toronto, with an annual ridership of 1.48 million. However, dozens of other city pairs are also enabled, each of them - however slightly - contribute to ridership within Phase 3W. Residents of Southwestern Ontario would quickly make Windsor their gateway to the US Midwest, and even the northeastern states.
+
+```{r echo = FALSE}
+flow_data_phase3w <- convert_flow_matrix_to_dataframe(flow_matrix_phase3w)
+
+all_cities_coordinates <- rbind(can_cities_coordinates, usa_cities_coordinates)
+
+flow_data_phase3w <- source_destination_coord(flow_data_phase3w, all_cities_coordinates)
+```
+
+```{r echo = FALSE}
+
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 3W"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase3w$Source,
+      flow_data_phase3w$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase3w$Flow[flow_data_phase3w$Source == from_cma & flow_data_phase3w$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase3w$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase3w$Longitude.x + flow_data_phase3w$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase3w$Latitude.x + flow_data_phase3w$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase3w$Source, " - " , flow_data_phase3w$Destination, ":", round(flow_data_phase3w$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%      
+            
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%       
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+#### Density
+
+Let's plot the ridership density map after the opening of Phase 3W.
+
+```{r echo = FALSE}
+segments_phase3w <- segments %>% filter(!is.na(Phase3W))
+segments_phase3w <- segments_phase3w %>% select(c(Point1,	Point2,	Phase3W))
+names(segments_phase3w) <- c("Source", "Destination", "Flow")
+
+segments_phase3w <- source_destination_coord(segments_phase3w, all_cities_coordinates)
+
+segments_phase3w <- segments_phase3w %>% left_join(segments, by = c("Source" = "Point1", "Destination" = "Point2")) %>% select(-contains("Phase"))
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 3W"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase3w$Source,
+      segments_phase3w$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase3w$Flow[segments_phase3w$Source == from_cma & segments_phase3w$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = segments_phase3w$Opacity,
+      weight = segments_phase3w$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase3w$Longitude.x + segments_phase3w$Longitude.y) / 2
+    midpoint_lat <- (segments_phase3w$Latitude.x + segments_phase3w$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase3w$Source, " - " , segments_phase3w$Destination, ":", round(segments_phase3w$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%   
+      
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%   
+      
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+Here, we see that traffic to and from Windsor via Phase 3W is dispersed across the Midwest: the tunnel to Detroit sees an annual ridership of 9.45 million - by comparison, 4.4 million passenger vehicles used the Ambassador Bridge in 2019.
+
+Chicago alone sees annual ridership of over three million to and from the Canadian sections. Meanwhile, ridership along sections that were built in Phase 2 increases dramatically: along the Windsor - London section, it increases from 5.42 to 9.99 million. In the Toronto - Kitchener section, it increases from 8.40 to 10.88 million. That benefits all riders - not just those who cross the border.
+
+#### Service Patterns
+
+Phase 3W represents a connection of both the Canadian and US high speed railway networks, enabling travel as seamless as the border allows. But how would the border crossing work? Current cross-border trains operate by stopping at the border and waiting for all passengers to pass immigration checks - a setup that causes delays and damages time-competitiveness. Establishing pre-clearance facilities at the point of departure and running trains non-stop to the border would inconvenience passengers not travelling to/from the cities with pre-clearance facilities, and would reduce available seats for domestic passengers. Hence, a more flexible arrangement is needed.
+
+Instead, with the new Windsor - Detroit rail link, pre-clearance facilities would be established on both sides. An automated shuttle train would run between the two sides.
+
+For instance, a passenger travelling from Toronto to Chicago would:
+
+-   Take a Toronto - Windsor train.
+-   Arrive at Windsor, where all passengers regardless of their travel plans must leave.
+-   Our passenger would then undergo US pre-clearance checks.
+-   Board the next automated shuttle train, and arrive at Detroit Michigan Central Station without further checks.
+-   Board the next train to Chicago, and continue.
+-   If the passenger is delayed at US pre-clearance, that could be accommodated by taking a later train from Detroit. Our passenger's delay at customs wouldn't affect other passengers' travel plans.
+
+A similar process would occur for Canada-bound passengers. This arrangement, while requiring a transfer at the border, would eliminate operational delays due to the border crossing, guaranteeing reliability for all passengers. It would also eliminate the operational complexity of running long-distance trains across the border, as is the case with current cross-border trains.
+
+This arrangement is based on the currently under construction [Rapid Transit System](https://en.wikipedia.org/wiki/Johor_Bahru%E2%80%93Singapore_Rapid_Transit_System) between Singapore and the Malaysian city of Johor Bahru, which will also connect to the railway systems on both ends.
+
+On the Canadian side, we see that ridership density on all sections of Phase 2S rises to at least 9.56 million passengers per year. You will recall that under Phase 2, two trains per hour would run between Toronto and Windsor, while another two trains per hour run from Toronto to Kitchener. The increased ridership caused by the opening of Phase 3W would justify four trains per hour of eight car length along all of Phase 2S. This demonstrates how the expansion of the network benefits all riders along the corridor, who would enjoy more frequency regardless of their travel plans.
+
+As mentioned in Phase 2S, there would be two additional stops at Aberfoyle and Chatham. These could be served by some trains. Some trains could continue to terminate at the existing Via Rail station on Wyandotte Street, while others would terminate at the new station on College Avenue for convenient cross-border connections.
+
+While Phase 3W is geographically much smaller in scope than previous phases, it is much more complex, and its social and economic impact would be transformative, in ways that could not currently be foreseen.
+
+#### Economic Analysis
+
+Let's calculate the operating profit on the city pairs that are unlocked by the completion of Phase 3W.
+
+Note that the operating profit in our case only considers the distance travelled in Canada. So, for our passenger travelling from Toronto to Chicago, we would only calculate the operating profit on the portion of the trip between Toronto and Windsor. This is because, ultimately, the cost of Phase 3W on the Canadian side will be borne by Canadian taxpayers, so the return on the investment would only be generated based on assets already owned by Canadians.
+
+```{r echo = FALSE}
+Phase3W_Profit <-read_excel('Windsor-Quebec.xlsx', sheet = 'Profit Phase 3W', range = "A31:J55")
+
+as.data.frame(Phase3W_Profit)
+```
+
+We see that the most profitable city pair generated by the opening of Phase 3W is Toronto - Detroit, followed by Toronto - Chicago. Yet, we still see that dozens of other minor city pairs collectively generate significant profit.
+
+```{r echo = FALSE}
+profit_matrix_phase3w <- as.data.frame(Phase3W_Profit)
+
+rownames(profit_matrix_phase3w) <- profit_matrix_phase3w$CMA
+profit_matrix_phase3w <- profit_matrix_phase3w[, -1]
+
+totalProfit_phase3w <- sum(profit_matrix_phase3w, na.rm = T)
+totalProfit_phase3w
+```
+
+Now, the operating profit for our entire network within Canada rises to \$1.07 billion. The increase in profit to the US network will be significant, but outside the scope of our study.
+
+```{r echo = FALSE}
+Phase3W_ConsCosts <- ConstructionCosts %>% filter(Phase == "3W")
+Phase3W_ConsCosts
+
+sum(Phase3W_ConsCosts$`Cost in 2021 CAD`)
+```
+
+We make a back-of-the-envelope calculation for a construction cost of \$700 million at 2021 prices. This is calculated based on:
+
+-   8 km elevated viaduct from the Via Windsor Sub over the Essex Terminal Railway to the new station on College St., at \$60 m per km
+-   \$100 m for the new station, including two terminating tracks for domestic Canadian trains and one track for the cross border shuttle
+-   Cost of refurbishing western tube of tunnel will be split 50/50 with the US
+-   Building the new automated shuttle through refurbished tunnel
+
+This estimate could be wildly inaccurate, but let's make it here anyway.
+
+```{r echo = FALSE}
+(totalProfit_phase3w-totalProfit_phase2)/sum(Phase3W_ConsCosts$`Cost in 2021 CAD`)
+```
+
+Our investment, which would lead to an increase in operating profit of almost \$140 million per year, would have an RRR of almost 20%. Of course, the precondition is that both Canada and the US will have already built comprehensive networks of their own, making the cross-border link all the more attractive on both sides.
+
+### Phase 3N (Toronto - Buffalo Express Line)
+
+A conceptual proposal calls for high speed rail along the Empire Corridor from New York City via Albany to Buffalo. Links from Albany to Boston, and from Buffalo to Cleveland, have also been mooted. If these lines are eventually built, linking the Golden Horseshoe to the US network via Niagara Falls becomes the next logical step.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+phase3n_double <- readOGR(dsn = "KML/Phase 3N.kml", layer = "Double", verbose=FALSE)
+phase3n_single <- readOGR(dsn = "KML/Phase 3N.kml", layer = "Single", verbose=FALSE)
+phase3n_200 <- readOGR(dsn = "KML/Phase 3N.kml", layer = "200", verbose=FALSE)
+phase3n_250 <- readOGR(dsn = "KML/Phase 3N.kml", layer = "250", verbose=FALSE)
+phase3n_160 <- readOGR(dsn = "KML/Phase 3N.kml", layer = "160", verbose=FALSE)
+phase3n_cn <- readOGR(dsn = "KML/Phase 3N.kml", layer = "CN Replacement Tracks", verbose=FALSE)
+phase3n_bridge <- readOGR(dsn = "KML/Phase 3N.kml", layer = "Bridge", verbose=FALSE)
+
+phase3n_stations <- readOGR(dsn = "KML/Phase 3N.kml", layer = "Stations", verbose=FALSE)
+phase3n_checkpoints <- readOGR(dsn = "KML/Phase 3N.kml", layer = "Checkpoints", verbose=FALSE)
+phase3n_poly <- readOGR(dsn = "KML/Phase 3N.kml", layer = "Polygons", verbose=FALSE)
+```
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 3N Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>% addTiles()   
+    
+    m <- m %>%
+      
+        addPolylines(data = phase3n_cn, color = "navy", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase3n_bridge, color = "purple", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_double, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_single, color = "black", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase3n_160, color = "yellow", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_250, color = "#ff5500", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase3n_stations, icon = large_Station) %>%
+        addMarkers(data = phase3n_checkpoints, icon = check) %>%
+        addPolygons(data = phase3n_poly, fillColor = "purple", weight = 2, opacity = 1, color = "purple", dashArray = "3",  fillOpacity = 1) %>%
+        addLabelOnlyMarkers(data = phase3n_stations,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLegend("bottomright", 
+                  colors = c("black",  "yellow", "#ffaa00", "#ff5500", "navy", "purple"),
+                  labels = c("Regular Track", "Max Speed 160 km/h", "Max Speed 200 km/h", "Max Speed 250 km/h", "Replacement Track for CN Rail", "Re-opened Pedestrian Bridge"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+          
+          
+        addLegendImage(images = c('http://maps.google.com/mapfiles/kml/shapes/rail.png','http://maps.google.com/mapfiles/kml/shapes/police.png'),
+                 labels = c('Stations', 'Pre-clearance Checkpoint'),width = c(16,16), height = c(16,16),
+                 orientation = 'vertical',
+                 title = "Icons",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+  shinyApp(ui, server)   
+```
+
+The good news is that a large proportion of the work - an expansion of the Go Lakeshore West line, and improvements to the Niagara line, have either already been completed, or are underway. The bad news is that further improvements will be necessary and complex. These include:
+
+-   The purchase of the Grimsby Sub from CN
+-   The construction of a parallel freight line as compensation; probably by reactivating abandoned lines between Caledonia and Welland
+-   Expanding and upgrading the Grimsby Sub, for use by both cross-border trains and Go Transit
+-   Expansion of Niagara Falls stations on both sides
+-   Establishment of a new pedestrian crossing on the currently disused Michigan Central bridge
+
+The railway between Niagara Falls and Buffalo on the US side will also require an upgrade to high speed standards, though that is outside our scope.
+
+In order to save travellers' time, I suggest a construction of a US preclearance rail terminal, similar to the one in Vancouver for cross-border trains to Seattle. Passengers originating in Toronto itself could board the US-bound trains at the preclearance terminal; while passengers originating in Hamilton, the Niagara region, or Southwestern Ontario could take other trains to Niagara Falls, where they could then use the pedestrian crossing and board trains at the station on the US side. US-bound trains departing Toronto would run non-stop until the Niagara Falls station on the US side, where passengers would be free to join or leave. Canada-bound trains would, after leaving the US, run non-stop before arriving in Toronto, where all passengers would undergo Canadian immigration procedures.
+
+Unfortunately, Union Station suffers major congestion, and there will unlikely be any room for a dedicated US preclearance section. Hence, Phase 3N will require a dedicated Toronto terminal outside Union Station.
+
+I propose building the terminal (we'll call it Kipling International) near the Kipling subway station, next to the Canpas Sub, on land formerly occupied by the CP Obico Yard, and currently used to store cars. It would house both US preclearance and Canada immigration facilities, and space for four tracks. The Kipling International Terminal would be connected to the TTC and Go Transit stations by a tunnel. That would provide convenient access to the entire TTC and Go Transit networks, which by then will have been significantly expanded. Hence, Kipling International would serve as the GTA's gateway to the entire US high speed rail network, itself connected to the GTA's fast and convenient transit network.
+
+Sounds visionary? Now let's crunch the numbers.
+
+#### Ridership
+
+```{r echo = FALSE}
+Phase3N_Ridership <-read_excel('Windsor-Quebec.xlsx', sheet = 'Ridership Phase 3N', range = "A30:J46")
+
+flow_matrix_phase3n <- as.data.frame(Phase3N_Ridership)
+
+rownames(flow_matrix_phase3n) <- flow_matrix_phase3n$CMA
+flow_matrix_phase3n <- flow_matrix_phase3n[, -1]
+
+flow_matrix_phase3n[which(rownames(flow_matrix_phase3n) == "Detroit"), ] <- NA
+
+flow_matrix_phase3n
+```
+
+The biggest city pair that is enabled by Phase 3N is Toronto - New York, with an annual ridership of 2.62 million. The next largest is somewhat surprising: Toronto - Cleveland, at 1.34 million. Next is Toronto - Boston at 1.10 million. These are staggering numbers: annual ridership departing Toronto on US-bound trains (including those connecting from Ottawa) would be almost 12 million. By comparison, in 2019, Toronto Pearson Airport handled 13.8 million passengers on flights to and from the US.
+
+```{r echo = FALSE}
+flow_data_phase3n <- convert_flow_matrix_to_dataframe(flow_matrix_phase3n)
+
+flow_data_phase3n <- source_destination_coord(flow_data_phase3n, all_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 3N"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase3n$Source,
+      flow_data_phase3n$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase3n$Flow[flow_data_phase3n$Source == from_cma & flow_data_phase3n$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase3n$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase3n$Longitude.x + flow_data_phase3n$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase3n$Latitude.x + flow_data_phase3n$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase3n$Source, " - " , flow_data_phase3n$Destination, ":", round(flow_data_phase3n$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%      
+            
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%       
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+As we can see, Phase 3N unlocks city pairs that are currently unfathomable.
+
+We could theoretically calculate ridership to destinations as far south as Florida - which would certainly see plenty of usage by snowbirds. But, for simplicity's sake, we will only consider destinations as south as Washington and Columbus.
+
+#### Density
+
+```{r echo = FALSE}
+segments_phase3n <- segments %>% filter(!is.na(Phase3N))
+segments_phase3n <- segments_phase3n %>% select(c(Point1,	Point2,	Phase3N))
+names(segments_phase3n) <- c("Source", "Destination", "Flow")
+
+segments_phase3n <- source_destination_coord(segments_phase3n, all_cities_coordinates)
+
+segments_phase3n <- segments_phase3n %>% left_join(segments, by = c("Source" = "Point1", "Destination" = "Point2")) %>% select(-contains("Phase"))
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 3N"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase3n$Source,
+      segments_phase3n$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase3n$Flow[segments_phase3n$Source == from_cma & segments_phase3n$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = segments_phase3n$Opacity,
+      weight = segments_phase3n$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase3n$Longitude.x + segments_phase3n$Longitude.y) / 2
+    midpoint_lat <- (segments_phase3n$Latitude.x + segments_phase3n$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase3n$Source, " - " , segments_phase3n$Destination, ":", round(segments_phase3n$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+      
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%   
+      
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%   
+      
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+As we see, an estimated 11.71 million annual riders will travel to and from Toronto on cross-border trains. Yet, we also assume that additional streams of riders from London, Kitchener, Hamilton, and the Niagara Region will use other means (either rail or car) to reach Niagara Falls and then use the pedestrian crossing to join the US high speed rail network on the US side. That means that a total of 15.61 million travellers will cross the border either on trains themselves or by foot as a result of the opening of Phase 3N.
+
+While it's not a surprise that New York City would be the most popular destination, Cleveland stands out as surprisingly popular. This is due to the city itself, as well as its status as a hub on the US network. Regardless, the ridership numbers crossing the border are staggering, and rival those on the Canadian domestic segments. That's even after recognizing that the border deters significant travel demand.
+
+#### Service Patterns
+
+The sheer volume of travel that Phase 3N unleashes would lead to multiple trains using the Lakeshore West corridor per hour, accessing the Kipling International terminal. Metrolinx is sure to demand the cross-border ridership to be carried on fewer, but larger trains to ensure capacity for regular commuters. A specific service pattern would be outside the scope of our project, yet it would definitely include at least hourly departures from Toronto to New York and Cleveland on the largest possible trains.
+
+I also estimate that the sheer demand for cross-border traffic from elsewhere in Southern Ontario will require hourly (regular) trains between Niagara Falls and London, and between Niagara Falls and Kitchener via Guelph. That, by itself, would further contribute to connectivity across the region.
+
+Again, I invite you to imagine how Phase 3N - linking Toronto and the US high speed rail network via Buffalo - would transform economies and societies.
+
+#### Economic Analysis
+
+As with Phase 3W, we calculate operating profit based on distances travelled within Canada.
+
+```{r echo = FALSE}
+Phase3N_Profit <-read_excel('Windsor-Quebec.xlsx', sheet = 'Profit Phase 3N', range = "A31:J55")
+as.data.frame(Phase3N_Profit)
+```
+
+Given the short distance between Toronto and Niagara Falls, the increased operating profit within Canada is modest. But, it will be dwarfed by the increased operating profit experienced by the US network, given the much longer distance between Niagara Falls and the largest US destinations.
+
+```{r echo = FALSE}
+profit_matrix_phase3n <- as.data.frame(Phase3N_Profit)
+
+rownames(profit_matrix_phase3n) <- profit_matrix_phase3n$CMA
+profit_matrix_phase3n <- profit_matrix_phase3n[, -1]
+
+totalProfit_phase3n <- sum(profit_matrix_phase3n, na.rm = T)
+totalProfit_phase3n
+```
+
+Phase 3N would increase the network's annual operating profit in Canada to \$1.1 billion.
+
+```{r echo = FALSE}
+Phase3N_ConsCosts <- ConstructionCosts %>% filter(Phase == "3N")
+Phase3N_ConsCosts
+```
+
+Let's estimate the cost of Phase 3N at \$1.9 billion.
+
+-   Upgrading the Grimsby Sub between Hamilton to Niagara falls (65 km \@ \$40 m/km)
+-   The cost of the above will be split with Ontario, as the project will also provide benefit to Go Transit's plans to expand in the Niagara region
+-   New Kipling International terminal (\$200 m) and Niagara Falls station & border crossing (\$100 m)
+-   Reopening rail corridor between Caledonia and Welland for CN Rail (60 km \@ \$5 m/km)
+
+```{r echo = FALSE}
+(totalProfit_phase3n-totalProfit_phase2)/sum(Phase3N_ConsCosts$`Cost in 2021 CAD`)
+```
+
+With an RRR of almost 9% (assuming French-level construction costs), Phase 3N also poses excellent value both in the narrow economic sense and in the broader social sense.
+
+### Phase 3M (Montreal - Vermont Rail Link)
+
+A high speed rail link between Montreal and the US network via Vermont and Albany would connect Quebec and the National Capital Region with cities such as New York and Boston.
+
+The Quebec government is studying [a plan to establish](https://montrealgazette.com/news/local-news/quebec-budget-2022-1m-to-study-customs-clearance-at-central-station) a US pre-clearance facility at Montreal Gare Centrale, which would reduce journey times on existing Amtrak services that serve Montreal.
+
+If a high speed rail link between Montreal and the US border is to be built, I suggest that a new terminal with a US pre-clearance facility should be built at the Brossard REM station, instead of using Gare Centrale. The Brossard station would then be linked directly to the US via Burlington, Vermont by its dedicated link. This would give US-bound trains full operational control without conflict with freight rail operators, while providing a convenient link to the Island of Montreal via the REM.
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+phase3m_300 <- readOGR(dsn = "KML/Phase 3M.kml", layer = "300", verbose=FALSE)
+phase3m_reg <- readOGR(dsn = "KML/Phase 3M.kml", layer = "Regular", verbose=FALSE)
+
+phase3m_station <- readOGR(dsn = "KML/Phase 3M.kml", layer = "Station", verbose=FALSE)
+phase3m_checkpoint <- readOGR(dsn = "KML/Phase 3M.kml", layer = "Checkpoint", verbose=FALSE)
+```
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 3M Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>% addTiles()   
+    
+    m <- m %>%
+      
+        addPolylines(data = phase3m_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3m_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase3m_station, icon = large_Station) %>%
+        addMarkers(data = phase3m_checkpoint, icon = check) %>%
+        addLabelOnlyMarkers(data = phase3m_station,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLegend("bottomright", 
+                  colors = c("black",  "red"),
+                  labels = c("Regular Track", "Max Speed >300 km/h"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+          
+          
+        addLegendImage(images = c('http://maps.google.com/mapfiles/kml/shapes/rail.png','http://maps.google.com/mapfiles/kml/shapes/police.png'),
+                 labels = c('Stations', 'Pre-clearance Checkpoint'),width = c(16,16), height = c(16,16),
+                 orientation = 'vertical',
+                 title = "Icons",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+  shinyApp(ui, server)   
+```
+
+What's more, a passenger travelling from Ottawa or Quebec City would also connect from Gare Centrale to Brossard via the REM - while this is an extra step compared to US preclearance at Gare Centrale, the faster journey time from Brossard to the US should make the entire journey more time competitive.
+
+Let's analyze the numbers.
+
+#### Ridership
+
+```{r echo = FALSE}
+Phase3M_Ridership <-read_excel('Windsor-Quebec.xlsx', sheet = 'Ridership Phase 3M', range = "A30:J46")
+
+flow_matrix_phase3m <- as.data.frame(Phase3M_Ridership)
+
+rownames(flow_matrix_phase3m) <- flow_matrix_phase3m$CMA
+flow_matrix_phase3m <- flow_matrix_phase3m[, -1]
+
+flow_matrix_phase3m[which(rownames(flow_matrix_phase3m) == "Detroit"), ] <- NA
+
+flow_matrix_phase3m
+```
+
+The biggest city pair is Montreal - New York at 1.87 million annual riders, followed by Ottawa - New York at 0.89 million and Montreal - Boston at 0.75 million. The numbers here are much more modest compared to Phase 3N, reflecting the language barrier between Quebec and the US (the Ottawa - US numbers calculated without it). However, the sheer number of smaller city pairs still add up.
+
+```{r echo = FALSE}
+flow_data_phase3m <- convert_flow_matrix_to_dataframe(flow_matrix_phase3m)
+
+flow_data_phase3m <- source_destination_coord(flow_data_phase3m, all_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 3M"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase3m$Source,
+      flow_data_phase3m$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase3m$Flow[flow_data_phase3m$Source == from_cma & flow_data_phase3m$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase3m$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase3m$Longitude.x + flow_data_phase3m$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase3m$Latitude.x + flow_data_phase3m$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase3m$Source, " - " , flow_data_phase3m$Destination, ":", round(flow_data_phase3m$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+         
+       ) %>%      
+            
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+         
+       ) %>%
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%       
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+As with Phase 3N, we see the sheer number of city pairs that are enabled by the link. We also know that it will attract snowbirds who are less time sensitive. But for the sake of this study, we only consider traffic as far south as Washington.
+
+Let's look at ridership density.
+
+#### Density
+
+```{r echo = FALSE}
+segments_phase3m <- segments %>% filter(!is.na(Phase3M))
+segments_phase3m <- segments_phase3m %>% select(c(Point1,	Point2,	Phase3M))
+names(segments_phase3m) <- c("Source", "Destination", "Flow")
+
+segments_phase3m <- source_destination_coord(segments_phase3m, all_cities_coordinates)
+
+segments_phase3m <- segments_phase3m %>% left_join(segments, by = c("Source" = "Point1", "Destination" = "Point2")) %>% select(-contains("Phase"))
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 3M"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase3m$Source,
+      segments_phase3m$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase3m$Flow[segments_phase3n$Source == from_cma & segments_phase3m$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = segments_phase3m$Opacity,
+      weight = segments_phase3m$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase3m$Longitude.x + segments_phase3m$Longitude.y) / 2
+    midpoint_lat <- (segments_phase3m$Latitude.x + segments_phase3m$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase3m$Source, " - " , segments_phase3m$Destination, ":", round(segments_phase3m$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%   
+      
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+       
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%   
+      
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+We see that in total, 6.76 million annual riders will use Phase 3M between Montreal and the US. 69% of them, or 4.66 million, will either travel to or connect through New York. 1.21 million will travel to/from Boston. Traffic to Upstate New York and the Midwest is negligible.
+
+Overall, while ridership on Phase 3M is less than on Phase 3N or even Phase 3W, it is still very significant. Let's analyze it from the service perspective.
+
+#### Service Patterns
+
+With 6.76 million annual riders and a comparatively simple ridership distribution, Phase 3M would be much less complex to serve than Phase 3N.
+
+A single 16-car train per hour between Montreal and New York would serve 6 million annual riders. An additional eight-car train between Montreal and Boston via Albany would serve an additional 1.5 million annual riders. Thus, the vast majority of riders on Phase 3M would be accommodated.
+
+Let's look at Phase 3M from the economic perspective.
+
+#### Economic Analysis
+
+Here's the operating profit on each city pair, considering the distance travelled within Canada.
+
+```{r echo = FALSE}
+Phase3M_Profit <-read_excel('Windsor-Quebec.xlsx', sheet = 'Profit Phase 3M', range = "A31:J55")
+as.data.frame(Phase3M_Profit)
+```
+
+As with Phase 3N and Phase 3W, we see that the marginal operating profit generated by each city pair is modest. But, collectively, they add up.
+
+```{r echo = FALSE}
+profit_matrix_phase3m <- as.data.frame(Phase3M_Profit)
+
+rownames(profit_matrix_phase3m) <- profit_matrix_phase3m$CMA
+profit_matrix_phase3m <- profit_matrix_phase3m[, -1]
+
+totalProfit_phase3m <- sum(profit_matrix_phase3m, na.rm = T)
+totalProfit_phase3m
+```
+
+We calculate that Phase 3M will increase total annual operating profit to \$1.021 billion.
+
+```{r echo = FALSE}
+Phase3M_ConsCosts <- ConstructionCosts %>% filter(Phase == "3M")
+Phase3M_ConsCosts
+```
+
+Assuming 65 km within Canada, and a French-level construction cost, Phase 3M would cost \$2.6 billion. The additional cost of building the terminal at Brossard will be modest, given that it is currently a parking lot.
+
+```{r echo = FALSE}
+sum(Phase3M_ConsCosts$`Cost in 2021 CAD`)
+```
+
+```{r echo = FALSE}
+(totalProfit_phase3m-totalProfit_phase2)/sum(Phase3M_ConsCosts$`Cost in 2021 CAD`)
+```
+
+With an RRR of 3.5%, Phase 3M is less profitable than Phase 3N or Phase 3W. However, it is still above that of Phases 1 or 2, and the broader positive externalities are still very significant.
+
+### Analysis of Phase 3
+
+We have now completed the entire high-speed rail corridor, from Windsor to Quebec City, with three links to the US network.
+
+Let's look at an infrastructure map of the entire network.
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Phase 3 Infrastructure Map"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+     # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()   
+    
+    m <- m %>%
+        addPolylines(data = phase1_replace, color = "navy", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_160, color = "yellow", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase1_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase1_allStops, icon = large_Station) %>%
+        addMarkers(data = phase1_someStops, icon = small_Station) %>%
+        addLabelOnlyMarkers(data = phase1_allStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLabelOnlyMarkers(data = phase1_someStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "8px"))
+            )  %>%
+        addPolylines(data = phase2q_tunnel, color = "black", weight = 4, opacity = 0.5) %>%
+        addPolylines(data = phase2q_reg2, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2q_reg, color = "black", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_160, color = "yellow", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_200, color = "#ffaa00", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_250, color = "#ff5500", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase2q_300, color = "red", weight = 2, opacity = 1) %>%
+        addMarkers(data = phase2q_stations, icon = large_Station) %>%
+        addLabelOnlyMarkers(data = phase2q_stations,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%      
+        addPolylines(data = phase2s_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_250, color = "#ff5500", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase2s_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase2s_allStops, icon = large_Station) %>%
+        addMarkers(data = phase2s_someStops, icon = small_Station) %>%
+        addLabelOnlyMarkers(data = phase2s_allStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%
+        addLabelOnlyMarkers(data = phase2s_someStops,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "8px"))
+            )  %>%
+      
+      
+        addPolylines(data = phase3w_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3w_cbs, color = "#32CD32", weight = 2, opacity = 1) %>%
+        addMarkers(data = phase3w_stations, icon = large_Station) %>%
+        addMarkers(data = phase3w_checkpoints, icon = check) %>%
+        addLabelOnlyMarkers(data = phase3w_stations,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%      
+      
+        addPolylines(data = phase3n_cn, color = "navy", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase3n_bridge, color = "purple", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_double, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_single, color = "black", weight = 2, opacity = 1) %>%
+        addPolylines(data = phase3n_160, color = "yellow", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_200, color = "#ffaa00", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3n_250, color = "#ff5500", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase3n_stations, icon = large_Station) %>%
+        addMarkers(data = phase3n_checkpoints, icon = check) %>%
+        addPolygons(data = phase3n_poly, fillColor = "purple", weight = 2, opacity = 1, color = "purple", dashArray = "3",  fillOpacity = 1) %>%
+        addLabelOnlyMarkers(data = phase3n_stations,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))
+            ) %>%      
+      
+        addPolylines(data = phase3m_reg, color = "black", weight = 4, opacity = 1) %>%
+        addPolylines(data = phase3m_300, color = "red", weight = 4, opacity = 1) %>%
+        addMarkers(data = phase3m_station, icon = large_Station) %>%
+        addMarkers(data = phase3m_checkpoint, icon = check) %>%
+        addLabelOnlyMarkers(data = phase3m_station,
+              label = ~Name,
+              labelOptions = labelOptions(
+                noHide = TRUE,
+                textOnly = TRUE,
+                direction = "auto",
+                style = list("font-weight" = "bold", "font-size" = "12px"))) %>%      
+      
+        addLegend("bottomright", 
+                  colors = c("black",  "yellow", "#ffaa00", "#ff5500", "red", "navy", "#32CD32", "purple"),
+                  labels = c("Regular Track", "Max Speed 160 km/h", "Max Speed 200 km/h", "Max Speed 250 km/h", "Max Speed >300 km/h", "Replacement Track for CN Rail", "Windsor-Detroit Cross-Border Shuttle Train", "Re-opened Pedestrian Bridge"),
+                  title = "Trackage",
+                  opacity = 1) %>%
+        addLegendImage(images = c('http://maps.google.com/mapfiles/kml/shapes/rail.png',
+                            'http://maps.google.com/mapfiles/kml/shapes/rail.png', 'http://maps.google.com/mapfiles/kml/shapes/police.png'),
+                 labels = c('All Trains Stop', 'Some Trains Stop', 'Pre-Clearance Checkpoint'),width = c(16,8,16), height = c(16,8,16),
+                 orientation = 'vertical',
+                 title = "Icons",
+                 labelStyle = "font-size: 14px; vertical-align: middle;",
+                 position = 'topright')
+    
+    m
+   })
+ }
+
+ shinyApp(ui, server) 
+```
+
+When complete, the corridor stretches over 1,000 km. It passes through big cities, small towns, and farmland. It crosses rivers, surges alongside highways, and interacts with local train services. About 2/3 of Canada's population would be within a few hours' of frequent and comfortable train ride, guaranteeing its status as a nation-building project. It directly or indirectly connects with the US, further integrating the two nations' economies, and enabling connections that are currently implausible.
+
+```{r echo = FALSE}
+Phase3_Ridership <-read_excel('Windsor-Quebec.xlsx', sheet = 'Phase 3 Summary', range = "A1:J25")
+
+flow_matrix_phase3 <- as.data.frame(Phase3_Ridership)
+
+rownames(flow_matrix_phase3) <- flow_matrix_phase3$CMA
+flow_matrix_phase3 <- flow_matrix_phase3[, -1]
+
+flow_matrix_phase3
+```
+
+The ridership matrix on city pairs within Canada, and on cross-border journeys, is the product of painstaking calculations based on Alon Levy's model, and of some important assumptions.
+
+```{r echo = FALSE}
+flow_data_phase3 <- convert_flow_matrix_to_dataframe(flow_matrix_phase3)
+
+flow_data_phase3 <- source_destination_coord(flow_data_phase3, all_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Ridership Between City Pairs Along HSR Corridor, Phase 3"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      flow_data_phase3$Source,
+      flow_data_phase3$Destination,
+      function(from_cma, to_cma) {
+        volume <- flow_data_phase2$Flow[flow_data_phase3$Source == from_cma & flow_data_phase3$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "blue",
+      opacity = 1,
+      weight = flow_data_phase3$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (flow_data_phase3$Longitude.x + flow_data_phase3$Longitude.y) / 2
+    midpoint_lat <- (flow_data_phase3$Latitude.x + flow_data_phase3$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(flow_data_phase3$Source, " - " , flow_data_phase3$Destination, ":", round(flow_data_phase3$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%      
+            
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%       
+
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+The map visualizing the matrix also paints a picture of a complex web of relationships which are currently unfathomable. Not only are the thick lines between the largest cities apparent, but so are dozens of thinner lines between smaller cities. It is clear that high speed rail both complements the already tight connections between large cities, but also enables currently unthinkable mobility options for smaller cities. Reaching major US cities such as New York, Boston, Chicago, and even Washington now no longer require an apprehensive flight or a gruelling drive: just step on a train and be whisked to your destination.
+
+```{r echo = FALSE}
+segments_phase3 <- segments %>% filter(!is.na(Phase3))
+segments_phase3 <- segments_phase3 %>% select(c(Point1,	Point2,	Phase3))
+names(segments_phase3) <- c("Source", "Destination", "Flow")
+
+segments_phase3 <- segments_phase3 %>% left_join(segments, by = c("Source" = "Point1", "Destination" = "Point2")) %>% select(-contains("Phase"))
+
+segments_phase3 <- source_destination_coord(segments_phase3, all_cities_coordinates)
+```
+
+```{r echo = FALSE}
+ui <- fluidPage(
+  titlePanel("Density of Ridership Along HSR Corridor, Phase 3"),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    # Create a leaflet map
+    m <- leaflet() %>%
+      addTiles()
+    
+    # Create empty vectors to store longitude and latitude
+    polyline_lng <- numeric()
+    polyline_lat <- numeric()
+
+    # Iterate through travel volumes to create polylines
+    walk2(
+      segments_phase3$Source,
+      segments_phase3$Destination,
+      function(from_cma, to_cma) {
+        volume <- segments_phase3$Flow[segments_phase2s$Source == from_cma & segments_phase3$Destination == to_cma]
+        
+        from_coords <- all_cities_coordinates[all_cities_coordinates$CMA == from_cma, c("Latitude", "Longitude")]
+        to_coords <- all_cities_coordinates[all_cities_coordinates$CMA == to_cma, c("Latitude", "Longitude")]
+        
+        # Append coordinates to the vectors
+        polyline_lng <<- c(polyline_lng, from_coords$Longitude, to_coords$Longitude, NA)
+        polyline_lat <<- c(polyline_lat, from_coords$Latitude, to_coords$Latitude, NA)
+      }
+    )
+
+    # Add polylines to the map
+    m <- addPolylines(
+      m,
+      lng = polyline_lng,
+      lat = polyline_lat,
+      color = "#ffbf00",
+      opacity = segments_phase3$Opacity,
+      weight = segments_phase3$Flow,
+      group = "Ridership"
+    )    
+    
+    midpoint_lon <- (segments_phase3$Longitude.x + segments_phase3$Longitude.y) / 2
+    midpoint_lat <- (segments_phase3$Latitude.x + segments_phase3$Latitude.y) / 2
+
+    m <- addLabelOnlyMarkers(
+      m,
+      lat = midpoint_lat,
+      lng = midpoint_lon,
+      label = paste(segments_phase3$Source, " - " , segments_phase3$Destination, ":", round(segments_phase3$Flow,2)),
+      labelOptions = labelOptions(noHide = TRUE),
+      group = "Labels"
+    )
+    
+    m <- m %>%
+       addLabelOnlyMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(usa_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%    
+      
+       addLabelOnlyMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         label = paste0(can_cities_coordinates$CMA),
+         labelOptions = labelOptions(
+           noHide = TRUE,
+           textOnly = TRUE,
+           direction = "auto",
+           style = list("font-weight" = "bold", "font-size" = "14px")),
+         group = "Labels"
+       ) %>%
+      addCircleMarkers(
+         data = usa_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#6231de",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%        
+      addCircleMarkers(
+         data = can_cities_coordinates,
+         lat = ~Latitude,
+         lng = ~Longitude,
+         color = "#DE3163",
+         fill = TRUE,
+         fillOpacity = 1,
+         radius = ~5*sqrt(`2041 Projection`),
+         group = "Cities") %>%
+             
+       addLayersControl(
+         overlayGroups = c("Ridership", "Labels", "Cities"),
+         options = layersControlOptions(collapsed = FALSE)
+       )
+     m
+   })
+ }
+
+shinyApp(ui, server)
+```
+
+We see that the segments within Canada with the highest ridership density are still between Toronto and Ottawa. However, all sections which had been built by Phase 2 saw significant increases in ridership density with the completion of Phase 3. It is also striking that, even with the barrier to travel created by the border, the volume of generated cross border traffic would rival, if not exceed, existing modes of transport.
+
+Finally, here's how Phase 3 would resemble, service-wide.
+
+```{r echo = FALSE}
+knitr::include_graphics("P3.svg")
+```
+
+```{r echo = FALSE}
+Phase3_Profit <-read_excel('Windsor-Quebec.xlsx', sheet = 'Phase 3 Summary', range = "A29:J53")
+```
+
+```{r echo = FALSE}
+profit_matrix_phase3 <- as.data.frame(Phase3_Profit)
+
+rownames(profit_matrix_phase3) <- profit_matrix_phase3$CMA
+profit_matrix_phase3 <- profit_matrix_phase3[, -1]
+
+totalProfit_phase3 <- sum(profit_matrix_phase3, na.rm = T)
+totalProfit_phase3
+```
+
+Completing all three segments of Phase 3 will raise total annual operating profit to \$1.267 billion. This reflects both the relatively short segments of new trackage built in Canada and the new domestic journeys taken within Canada (e.g. Toronto - Chicago via Windsor). However, it's likely that completing Phase 3 will deliver a much greater increase in operating profit to the US network.
+
+```{r echo = FALSE}
+Phase3_ConsCosts <- subset(ConstructionCosts, grepl("[3]", Phase))
+Phase3_ConsCosts
+```
+
+The three segments of Phase 3 will cost a total of \$5.2 billion in 2021 prices. This does assume that Canada will be fully responsible for the costs in Canada.
+
+```{r echo = FALSE}
+(totalProfit_phase3-totalProfit_phase2)/sum(Phase3_ConsCosts$`Cost in 2021 CAD`)
+```
+
+The RRR for the three segments of Phase 3 would be 6.4%, for Canada. This is already very significant by itself. Positive externalities on both sides of the border will be incalculable.
+
+Let's look at the most popular city pairs.
+
+```{r echo = FALSE}
+usa_cities_list <- as.data.frame(usa_cities_coordinates)$CMA
+
+
+most_ridership <- flow_data_phase3 %>% filter(Flow > 1) %>% arrange(desc(Flow))%>% select("Source","Destination","Flow")
+
+most_ridership <- most_ridership %>%
+  mutate(in_USA = Source %in% usa_cities_list | Destination %in% usa_cities_list)
+
+most_ridership <- most_ridership %>%
+  arrange(desc(Flow))
+
+ggplot(most_ridership, aes(x = reorder(paste(Source, "-", Destination), -Flow), y = Flow, fill = in_USA)) +
+  geom_bar(stat = "identity") +
+  labs(x = "City Pair", y = "Annual Ridership in Millions", fill = "Journey Type") +
+  scale_fill_manual(values = c("FALSE" = "#DE3163", "TRUE" = "#6231de"), labels = c("Domestic", "Cross-Border")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1), plot.title = element_text(hjust = 0.5), legend.position = c(0.8, 0.6), legend.background = element_rect(fill="lightblue", size=0.5)) +
+  ggtitle("City Pairs with More Than 1 Million Annual Riders")# Slant the x-axis labels
+```
+
+Here, we see all the city pairs for which annual ridership is estimated as above 1 million.
+
+Not surprisingly, Toronto - Montreal and Toronto - Ottawa are on top. But it's striking that five of the top ten city pairs cross the border.
+
+Finally, let's look at the city pairs that generate at least 1% of the total annual operating profit to the network within Canada:
+
+```{r echo = FALSE}
+all_profit <- as.data.frame(Phase3_Profit)
+
+rownames(all_profit) <- all_profit$CMA
+all_profit <- all_profit[, -1]
+
+most_profit <- convert_flow_matrix_to_dataframe(all_profit) %>% arrange(desc(Flow)) %>% filter(Flow > 0.01*totalProfit_phase3)
+```
+
+```{r echo = FALSE}
+most_profit <- most_profit %>%
+  arrange(desc(Flow))
+
+most_profit <- most_profit %>%
+  mutate(in_USA = Source %in% usa_cities_list | Destination %in% usa_cities_list)
+
+ggplot(most_profit, aes(x = reorder(paste(Source, "-", Destination), -Flow), y = Flow, fill = in_USA)) +
+  geom_bar(stat = "identity") +
+  labs(x = "City Pair", y = "Annual Operating Profit in Millions", fill = "Journey Type") +
+  scale_fill_manual(values = c("FALSE" = "#DE3163", "TRUE" = "#6231de"), labels = c("Domestic", "Cross-Border")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1), plot.title = element_text(hjust = 0.5), legend.position = c(0.8, 0.6), legend.background = element_rect(fill="lightblue", size=0.5)) +
+  ggtitle("City Pairs with Annual Operating Profit More than 1% of Total")# Slant the x-axis labels
+```
+
+Not surprisingly, Toronto - Montreal and Toronto - Ottawa still dominate the list.
+
+Compared to the previous ridership table, cross border city pairs rank modestly. Yet it is still striking that many city pairs involving smaller cities such as London, Windsor, and Quebec City rank among it. That indicates that while these smaller cities are modest by themselves, they collectively make a vital contribution to the economic viability of the entire network.
+
+# Conclusion
+
+That was a lot to take in! Now we've examined what high speed rail in the Windsor to Quebec City corridor would look like: the underlying market, potential ridership patterns, economic viability, and service patterns. How could we summarize our findings?
+
+Here are some key points:
+
+-   Populations along the Corridor are projected to grow over the coming decades, increasing the size of the market. We should build for future demand, not just present needs.
+-   A dedicated high speed rail corridor along the Corridor is economically viable, but only if we're able to control construction costs at levels comparable to countries such as France.
+-   The UK's HS2 project serves as a what-not-to-do lesson in building a high speed railway line.
+-   Given the flat terrain and the relatively straight layout of existing rail corridors, there is significant potential to save costs by utilizing these advantages.
+-   There is scope for more value engineering, such as sharing the cost of upgrades with local transit agencies, and building sections with lower ridership as a single track.
+-   The potential for cross-border connections, if the US builds a comprehensive network, is less certain, but is certain to be very significant.
+
+I hope this project has been informative, detailed, and even entertaining. If you're a politician reading this, and this motivates you to take concrete action, then your first ticket on the new train will be on yours truly.
+
+I'll let you go with how we began.
+
+```{r echo = FALSE}
+embed_url("https://www.youtube.com/watch?v=SLcd4PO3K7w")
+```

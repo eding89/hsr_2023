@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>Phase 3M.kml</name>
+	<StyleMap id="inline">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline16</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline2</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline13">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="inline16">
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<Style id="inline2">
+		<LineStyle>
+			<color>ff000000</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<StyleMap id="inline4">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#inline13</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#inline6</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="inline6">
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>4</width>
+		</LineStyle>
+	</Style>
+	<StyleMap id="msn_police">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_police0</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_police</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_rail0">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_rail1</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_rail2</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="sh_police">
+		<IconStyle>
+			<scale>1.4</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/police.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sh_rail2">
+		<IconStyle>
+			<scale>1.4</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sn_police0">
+		<IconStyle>
+			<scale>1.2</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/police.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Style id="sn_rail1">
+		<IconStyle>
+			<scale>1.2</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/shapes/rail.png</href>
+			</Icon>
+			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+		</IconStyle>
+	</Style>
+	<Folder>
+		<name>Phase 3M</name>
+		<open>1</open>
+		<Folder>
+			<name>Checkpoint</name>
+			<Placemark>
+				<LookAt>
+					<longitude>-73.45481572777943</longitude>
+					<latitude>45.43474625961783</latitude>
+					<altitude>0</altitude>
+					<heading>1.763700565131906</heading>
+					<tilt>3.578485915619103</tilt>
+					<range>8743.427855940548</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#msn_police</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>-73.43226691171587,45.43953240685546,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder>
+			<name>Station</name>
+			<Placemark>
+				<name>Montréal (Brossard)</name>
+				<LookAt>
+					<longitude>-73.46008690828815</longitude>
+					<latitude>45.44310513075574</latitude>
+					<altitude>0</altitude>
+					<heading>1.172725904863416</heading>
+					<tilt>5.396287398697956</tilt>
+					<range>8280.022484998042</range>
+					<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>
+				</LookAt>
+				<styleUrl>#msn_rail0</styleUrl>
+				<Point>
+					<gx:drawOrder>1</gx:drawOrder>
+					<coordinates>-73.43325861801171,45.43860210406553,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder>
+			<name>300</name>
+			<Placemark>
+				<name>Untitled Path</name>
+				<styleUrl>#inline4</styleUrl>
+				<LineString>
+					<tessellate>1</tessellate>
+					<coordinates>
+						-72.98215624699687,45.01461785217921,0 -72.98321652734479,45.049498000791,0 -72.98478505437585,45.0563820905405,0 -72.98724996991812,45.06282544447739,0 -72.99359173429428,45.07191028575394,0 -73.00130862315662,45.0790349099341,0 -73.00723209550314,45.08295982394075,0 -73.3221165894242,45.2740315808383,0 -73.3293161607987,45.28046865255245,0 -73.3341699444768,45.2856059104404,0 -73.40513303508649,45.37222180571112,0 -73.42483893004045,45.3961330079605,0 
+					</coordinates>
+				</LineString>
+			</Placemark>
+		</Folder>
+		<Folder>
+			<name>Regular</name>
+			<Placemark>
+				<name>Untitled Path</name>
+				<styleUrl>#inline</styleUrl>
+				<LineString>
+					<tessellate>1</tessellate>
+					<coordinates>
+						-73.42475906297643,45.39626997716811,0 -73.43660381652406,45.41015719525129,0 -73.4442314394901,45.41911408885471,0 -73.44485762329127,45.42027271573558,0 -73.44505102058631,45.42152310468404,0 -73.44490944060175,45.4227541089251,0 -73.44430330380476,45.42386316959647,0 -73.4365196955435,45.43674043312912,0 -73.43558339746258,45.43739626776356,0 -73.42905229048445,45.43951358374719,0 
+					</coordinates>
+				</LineString>
+			</Placemark>
+		</Folder>
+	</Folder>
+</Document>
+</kml>
